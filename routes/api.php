@@ -5,8 +5,11 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DepartmentController;
+use App\Http\Controllers\Api\DomainController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\PurchaseInvoiceController;
 use App\Http\Controllers\Api\RoFormController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
@@ -56,7 +59,9 @@ Route::middleware(['custom_auth'])->group(function () {
     Route::patch('/vendor/{id}', [VendorController::class, 'update']);
     Route::delete('/vendor/{id}', [VendorController::class, 'destroy']);
 
-    // RO Form CRUD
+    // RO Form CRUD & Revenue Summary
+    Route::get('/roForm/revenue-summary', [RoFormController::class, 'revenueSummary']);
+    Route::get('/ro-form/revenue-summary', [RoFormController::class, 'revenueSummary']);
     Route::get('/roForm', [RoFormController::class, 'index']);
     Route::post('/roForm', [RoFormController::class, 'store']);
     Route::get('/roForm/{id}', [RoFormController::class, 'show']);
@@ -79,4 +84,14 @@ Route::middleware(['custom_auth'])->group(function () {
         Route::patch('/{id}', [AccountsController::class, 'update']);
         Route::delete('/{id}', [AccountsController::class, 'destroy']);
     });
+
+    // Domains
+    Route::post('/domains/bulk-update', [DomainController::class, 'bulkUpdate']);
+    Route::apiResource('domains', DomainController::class);
+
+    // Payments
+    Route::apiResource('payments', PaymentController::class);
+
+    // Purchase Invoices
+    Route::apiResource('purchase-invoices', PurchaseInvoiceController::class);
 });

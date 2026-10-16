@@ -45,6 +45,24 @@ class RolePermissionSeeder extends Seeder
             // Accounts
             'view-accounts',
             'manage-accounts',
+
+            // Domains
+            'view-domain',
+            'create-domain',
+            'edit-domain',
+            'delete-domain',
+
+            // Payments
+            'view-payment',
+            'create-payment',
+            'edit-payment',
+            'delete-payment',
+
+            // Purchase Invoices
+            'view-purchase-invoice',
+            'create-purchase-invoice',
+            'edit-purchase-invoice',
+            'delete-purchase-invoice',
         ];
         $manager = Role::where('name', 'manager')->first();
         if ($manager) {
@@ -67,6 +85,21 @@ class RolePermissionSeeder extends Seeder
             // Accounts
             'view-accounts',
             'manage-accounts',
+
+            // Domains
+            'view-domain',
+            'create-domain',
+            'edit-domain',
+
+            // Payments
+            'view-payment',
+            'create-payment',
+            'edit-payment',
+
+            // Purchase Invoices
+            'view-purchase-invoice',
+            'create-purchase-invoice',
+            'edit-purchase-invoice',
         ];
         $employee = Role::where('name', 'employee')->first();
         if ($employee) {
@@ -79,7 +112,19 @@ class RolePermissionSeeder extends Seeder
             'view-accounts',
             'manage-accounts',
             'view-ro-form',
+            'view-ro-revenue',
             'view-vendor',
+
+            // Domains & Payments
+            'view-domain',
+            'view-payment',
+            'create-payment',
+            'edit-payment',
+
+            // Purchase Invoices
+            'view-purchase-invoice',
+            'create-purchase-invoice',
+            'edit-purchase-invoice',
         ];
         $accounts = Role::where('name', 'accounts')->first();
         if ($accounts) {

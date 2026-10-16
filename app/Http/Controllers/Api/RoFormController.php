@@ -29,7 +29,8 @@ class RoFormController extends Controller implements HasMiddleware
             new Middleware ('permissions:view-ro-form', only:['index','show']),
             new Middleware ('permissions:create-ro-form', only:['store']),
             new Middleware ('permissions:edit-ro-form', only:['update']),
-            new Middleware ('permissions:delete-ro-form', only:['destroy'])
+            new Middleware ('permissions:delete-ro-form', only:['destroy']),
+            new Middleware ('permissions:view-ro-revenue', only:['revenueSummary'])
         ];
     }
     protected $amountCalculator;
@@ -89,14 +90,25 @@ class RoFormController extends Controller implements HasMiddleware
 
         $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
 
+        $summaryQuery = clone $query;
+
         $perPage = (int) $request->query('limit', $request->query('per_page', 15));
         $roForm = $query->paginate($perPage);
 
-        return response()->json([
+        $roleName = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $isPrivileged = in_array($roleName, ['admin', 'superadmin', 'accounts']) || $department === 'accounts';
+
+        $response = [
             'success' => true,
             'message' => 'Successfully fetched',
             'data' => $roForm,
-        ], 200);
+        ];
+
+        if ($isPrivileged) {
+            $response['revenue_summary'] = $this->calculateRevenueSummary($summaryQuery);
+        }
+
+        return response()->json($response, 200);
     }
 
     public function store(Request $request)
@@ -168,6 +180,8 @@ class RoFormController extends Controller implements HasMiddleware
             'commission_percent' => $data['commission_percent'] ?? 0,
 
             'status' => 'pending',
+            'approved_by' => 0,
+            'approved_leads' => [],
 
             'departments_id' => $user->departments_id,
             'primary_lead_id' => $user->primary_lead_id,
@@ -219,7 +233,7 @@ class RoFormController extends Controller implements HasMiddleware
     {
         $user = $request->attributes->get('user');
 
-        $roForm = RoForm::with('vendor', 'createdBy', 'updatedBy', 'rejectedBy', 'cancelledBy', 'approvedBy')->find($id);
+        $roForm = RoForm::with('vendor', 'createdBy', 'updatedBy', 'rejectedBy', 'cancelledBy')->find($id);
 
         if (! $roForm) {
             return response()->json([
@@ -313,7 +327,6 @@ class RoFormController extends Controller implements HasMiddleware
             'data' => $roForm->fresh()->load([
                 'createdBy',
                 'updatedBy',
-                'approvedBy',
                 'rejectedBy',
                 'cancelledBy',
             ]),
@@ -381,63 +394,93 @@ class RoFormController extends Controller implements HasMiddleware
 
         $roForm = RoForm::find($id);
 
-        if(!$roForm){
-            return response()->json([
-                'success'=>false,
-                'message'=>'Ro form not found'
-            ],404);
-        }
-
-        if($roForm->status != 'pending'){
-            return response()->json([
-                'success'=>false,
-                'message'=>'Only pending forms can approve'
-            ],422);
-        }
-
-        $role = strtolower($user->role?->name ?? $user->roles?->name ?? '');
-
-        if (
-            $role !== 'admin' &&
-            $role !== 'superadmin' &&
-            $user->id != $roForm->primary_lead_id &&
-            $user->id != $roForm->secondary_lead_id
-        ) {
+        if (!$roForm) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only assigned manager or Admin can approve the Ro form'
+                'message' => 'RO form not found'
+            ], 404);
+        }
+
+        // Cannot approve if rejected, cancelled, or deleted
+        if (in_array($roForm->status, ['rejected', 'cancelled', 'deleted'])) {
+            return response()->json([
+                'success' => false,
+                'message' => "Cannot approve a {$roForm->status} RO form."
+            ], 422);
+        }
+
+        // Check if already fully approved by both managers (count is 2)
+        if ((int)$roForm->approved_by >= 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This RO form has already been fully approved by both managers.'
+            ], 422);
+        }
+
+        // Authorization check: only assigned manager (primary or secondary lead) or Admin/Superadmin
+        $role = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $isAdmin = ($role === 'admin' || $role === 'superadmin');
+        $isLead = ($user->id == $roForm->primary_lead_id || $user->id == $roForm->secondary_lead_id);
+
+        if (!$isAdmin && !$isLead) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only assigned manager or Admin can approve the RO form.'
             ], 403);
         }
 
+        // Check if the current user has already approved
+        $approvedLeads = is_array($roForm->approved_leads) ? $roForm->approved_leads : [];
+        if (in_array($user->id, $approvedLeads)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already approved this RO form.'
+            ], 422);
+        }
+
+        // Record this approval
+        $approvedLeads[] = $user->id;
+        $approvedCount = min(count($approvedLeads), 2);
+        $wasPending = ($roForm->status === 'pending');
+
+        // If any one manager approves, status immediately becomes 'approved'
         $roForm->update([
-            'status'=> 'approved',
-            'approved_by' => $user->id,
-            'approved_at' => now()
+            'status' => 'approved',
+            'approved_by' => $approvedCount,
+            'approved_leads' => $approvedLeads,
+            'approved_at' => $roForm->approved_at ?? now(),
         ]);
 
         $roForm = $roForm->fresh();
 
-        // Automatically send email with RO PDF to Accounts team upon approval
+        // Automatically send email with RO PDF to Accounts team upon first approval
         $emailResult = null;
-        try {
-            $emailResult = $this->dispatchSendToAccounts($roForm);
-        } catch (\Throwable $e) {
-            Log::error('Failed to automatically send RO to Accounts upon approval: ' . $e->getMessage(), [
-                'ro_form_id' => $roForm->id,
-                'error' => $e->getMessage(),
-            ]);
-            $emailResult = [
-                'sent' => false,
-                'message' => $e->getMessage(),
-            ];
+        if ($wasPending) {
+            try {
+                $emailResult = $this->dispatchSendToAccounts($roForm);
+            } catch (\Throwable $e) {
+                Log::error('Failed to automatically send RO to Accounts upon approval: ' . $e->getMessage(), [
+                    'ro_form_id' => $roForm->id,
+                    'error' => $e->getMessage(),
+                ]);
+                $emailResult = [
+                    'sent' => false,
+                    'message' => $e->getMessage(),
+                ];
+            }
         }
+
+        $approvalMessage = ($approvedCount === 2)
+            ? 'RO form fully approved by both managers.'
+            : 'RO form approved successfully (1 of 2 managers approved).';
 
         return response()->json([
             'success' => true,
-            'message' => 'Successfully approved',
+            'message' => $approvalMessage,
+            'approved_by' => $approvedCount,
             'email_sent' => $emailResult['sent'] ?? false,
             'data' => $roForm
-        ]);
+        ], 200);
     }
 
     public function reject(Request $request, $id)
@@ -752,6 +795,129 @@ class RoFormController extends Controller implements HasMiddleware
         return [
             'sent' => true,
             'message' => 'RO sent to Accounts successfully.'
+        ];
+    }
+
+    /**
+     * Get revenue summary (total selling price, total buying price, commission, profit/loss).
+     * Restricted strictly to Admin, Superadmin, and Accounts.
+     */
+    public function revenueSummary(Request $request)
+    {
+        $user = $request->attributes->get('user') ?? $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $roleName = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $department = strtolower($user->department?->name ?? $user->departments?->name ?? '');
+
+        $isPrivileged = in_array($roleName, ['admin', 'superadmin', 'accounts']) || $department === 'accounts';
+
+        if (!$isPrivileged) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Revenue data can only be accessed by admin, super admin, and accounts.'
+            ], 403);
+        }
+
+        $query = RoForm::query();
+
+        // Department-based default scoping
+        if ($department === 'accounts') {
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            } else {
+                $query->where('status', 'approved');
+            }
+        } elseif ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Search
+        $search = trim($request->search);
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('ro_number', 'like', '%' . $search . '%')
+                    ->orWhere('vendor_name', 'like', '%' . $search . '%')
+                    ->orWhere('client_name', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Date filters
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        // Department filter
+        if ($request->filled('department_id')) {
+            $query->where('departments_id', $request->department_id);
+        }
+
+        // Vendor filter
+        if ($request->filled('vendor_id')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
+
+        $summary = $this->calculateRevenueSummary($query);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Revenue summary fetched successfully',
+            'data' => $summary,
+        ], 200);
+    }
+
+    /**
+     * Calculate revenue metrics (total selling price, total buying price, commission, profit & loss).
+     */
+    protected function calculateRevenueSummary($query): array
+    {
+        $baseQuery = clone $query;
+
+        $stats = $baseQuery->selectRaw("
+            COUNT(id) as total_ro_count,
+            COALESCE(SUM(selling_price), 0) as total_selling_price,
+            COALESCE(SUM(buying_price), 0) as total_buying_price,
+            COALESCE(SUM(total_amount), 0) as total_amount,
+            COALESCE(SUM((selling_price * COALESCE(commission_percent, 0)) / 100), 0) as total_commission
+        ")->first();
+
+        $totalSelling = (float)($stats->total_selling_price ?? 0);
+        $totalBuying = (float)($stats->total_buying_price ?? 0);
+        $totalAmount = (float)($stats->total_amount ?? 0);
+        $totalCommission = (float)($stats->total_commission ?? 0);
+
+        // Profit & Loss calculations
+        $grossProfit = $totalSelling - $totalBuying;
+        $netProfitLoss = $totalSelling - $totalBuying - $totalCommission;
+        $profitMargin = $totalSelling > 0 ? round(($netProfitLoss / $totalSelling) * 100, 2) : 0;
+
+        $financialStatus = 'break-even';
+        if ($netProfitLoss > 0) {
+            $financialStatus = 'profit';
+        } elseif ($netProfitLoss < 0) {
+            $financialStatus = 'loss';
+        }
+
+        return [
+            'total_ro_count' => (int)($stats->total_ro_count ?? 0),
+            'total_selling_price' => round($totalSelling, 2),
+            'total_buying_price' => round($totalBuying, 2),
+            'total_amount' => round($totalAmount, 2),
+            'total_commission' => round($totalCommission, 2),
+            'gross_profit' => round($grossProfit, 2),
+            'net_profit_loss' => round($netProfitLoss, 2),
+            'profit_margin_percent' => $profitMargin,
+            'financial_status' => $financialStatus, // 'profit', 'loss', or 'break-even'
         ];
     }
 }

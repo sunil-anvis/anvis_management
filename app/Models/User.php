@@ -148,4 +148,43 @@ class User extends Authenticatable
 
         return $this->role->permissions->contains('name', $permissionName);
     }
+
+    public function domains()
+    {
+        return $this->hasMany(Domain::class, 'sales_person_id');
+    }
+
+    public function purchaseInvoices()
+    {
+        return $this->hasMany(PurchaseInvoice::class);
+    }
+
+    public static function getAdminEmails()
+    {
+        $emails = self::whereHas('role', function ($q) {
+            $q->whereIn('name', ['admin', 'superadmin']);
+        })->where('status', 'active')->pluck('email')->toArray();
+
+        $envEmails = config('mail.admin_emails', '');
+        $hardcoded = $envEmails ? array_map('trim', explode(',', $envEmails)) : [];
+        return array_unique(array_filter(array_merge($emails, $hardcoded)));
+    }
+
+    public static function getManagerEmailsByBranch($branchId)
+    {
+        if (!$branchId) return [];
+        return self::whereHas('role', function ($q) {
+            $q->where('name', 'manager');
+        })->where('branch_id', $branchId)
+          ->where('status', 'active')
+          ->pluck('email')
+          ->toArray();
+    }
+
+    public static function getEmployeeEmailById($employeeId)
+    {
+        if (!$employeeId) return [];
+        $email = self::where('id', $employeeId)->where('status', 'active')->value('email');
+        return $email ? [$email] : [];
+    }
 }

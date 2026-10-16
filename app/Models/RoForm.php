@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RoForm extends Model
 {
-    protected $appends = ['invoice_generated'];
+    protected $appends = ['invoice_generated', 'approved_managers'];
 
     use SoftDeletes;
 
@@ -46,6 +46,7 @@ class RoForm extends Model
         'secondary_lead_id',
 
         'approved_by',
+        'approved_leads',
         'approved_at',
 
         'rejected_by',
@@ -58,6 +59,18 @@ class RoForm extends Model
 
         'rejection_reason',
         'cancellation_reason',
+    ];
+
+    protected $casts = [
+        'approved_by' => 'integer',
+        'approved_leads' => 'array',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'cancelled_at' => 'datetime',
+        'completion_date' => 'date',
+        'total_amount' => 'decimal:2',
+        'buying_price' => 'decimal:2',
+        'selling_price' => 'decimal:2',
     ];
 
     /**
@@ -97,9 +110,22 @@ class RoForm extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    public function approvedBy(){
-
-        return $this->belongsTo(User::class, 'approved_by');
+    /**
+     * Get the User models of managers who approved this RO form.
+     */
+    protected function approvedManagers(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $leads = $this->approved_leads ?? [];
+                if (empty($leads)) {
+                    return collect();
+                }
+                return User::whereIn('id', $leads)
+                    ->select('id', 'first_name', 'last_name', 'email')
+                    ->get();
+            }
+        );
     }
 
     public function rejectedBy(){

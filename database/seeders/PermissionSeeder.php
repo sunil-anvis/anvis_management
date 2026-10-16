@@ -36,10 +36,29 @@ class PermissionSeeder extends Seeder
             'create-ro-form',
             'edit-ro-form',
             'delete-ro-form',
+            'view-ro-revenue',
 
             // Accounts
             'view-accounts',
             'manage-accounts',
+
+            // Domains
+            'view-domain',
+            'create-domain',
+            'edit-domain',
+            'delete-domain',
+
+            // Payments
+            'view-payment',
+            'create-payment',
+            'edit-payment',
+            'delete-payment',
+
+            // Purchase Invoices
+            'view-purchase-invoice',
+            'create-purchase-invoice',
+            'edit-purchase-invoice',
+            'delete-purchase-invoice',
         ];
 
         foreach ($permissions as $permission) {
