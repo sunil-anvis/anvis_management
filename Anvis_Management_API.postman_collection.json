@@ -1,0 +1,1703 @@
+{
+    "info": {
+        "_postman_id": "anvis-mgmt-collection-v1",
+        "name": "Anvis Management API",
+        "description": "Complete Postman API Collection for Anvis Management System including Authentication, Users, Roles, Permissions, Branches, Departments, Vendors, RO Forms, Accounts, and Dashboard.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000/api",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "user_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "role_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "permission_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "branch_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "department_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "vendor_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "ro_form_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "account_id",
+            "value": "1",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "01. Authentication & Password Reset",
+            "item": [
+                {
+                    "name": "Login (Default Superadmin)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.token) {",
+                                    "    pm.collectionVariables.set(\"token\", jsonData.token);",
+                                    "    console.log(\"Token saved: \" + jsonData.token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"admin@admin.com\",\n    \"password\": \"password\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login (Manager)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.token) {",
+                                    "    pm.collectionVariables.set(\"token\", jsonData.token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"manager@manager.com\",\n    \"password\": \"password\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login (Employee)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.token) {",
+                                    "    pm.collectionVariables.set(\"token\", jsonData.token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"user@user.com\",\n    \"password\": \"password\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Register New User",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"john_doe\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"password123\",\n    \"role_id\": 4,\n    \"branch_id\": 1,\n    \"department_id\": 1,\n    \"primary_lead_id\": 2,\n    \"secondary_lead_id\": 1,\n    \"status\": \"active\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/register",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Current Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Authenticated User",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/user",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "user"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Refresh Token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.token) {",
+                                    "    pm.collectionVariables.set(\"token\", jsonData.token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/refresh",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "refresh"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Forgot Password",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"admin@admin.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/forgot-password",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "forgot-password"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Reset Password",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"token\": \"YOUR_RESET_TOKEN_HERE\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/reset-password",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reset-password"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/logout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "logout"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "02. Dashboard",
+            "item": [
+                {
+                    "name": "Get Dashboard Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "03. Users",
+            "item": [
+                {
+                    "name": "List Users",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"sarah_connor\",\n    \"first_name\": \"Sarah\",\n    \"last_name\": \"Connor\",\n    \"email\": \"sarah@example.com\",\n    \"password\": \"password123\",\n    \"role_id\": 4,\n    \"branch_id\": 1,\n    \"department_id\": 1,\n    \"primary_lead_id\": 2,\n    \"secondary_lead_id\": 1,\n    \"status\": \"active\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/users",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get User by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/{{user_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{user_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update User",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"first_name\": \"Sarah Jane\",\n    \"last_name\": \"Connor\",\n    \"status\": \"active\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/users/{{user_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{user_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Assign Role to User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"role_id\": 3\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/users/{{user_id}}/roles",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{user_id}}",
+                                "roles"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Remove Role from User",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/{{user_id}}/roles",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{user_id}}",
+                                "roles"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete User",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/users/{{user_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{user_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "04. Roles",
+            "item": [
+                {
+                    "name": "List Roles",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/roles",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roles"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Role",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"supervisor\",\n    \"permissions\": [\n        1,\n        2,\n        3\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/roles",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roles"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Role by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/roles/{{role_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roles",
+                                "{{role_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Role",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"team_lead\",\n    \"permissions\": [\n        1,\n        2,\n        3,\n        4\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/roles/{{role_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roles",
+                                "{{role_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Role",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/roles/{{role_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roles",
+                                "{{role_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "05. Permissions",
+            "item": [
+                {
+                    "name": "List Permissions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/permissions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Permission",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"export-reports\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/permissions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Permission by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/permissions/{{permission_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions",
+                                "{{permission_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Permission",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"download-reports\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/permissions/{{permission_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions",
+                                "{{permission_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Permission",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/permissions/{{permission_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "permissions",
+                                "{{permission_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "06. Branches",
+            "item": [
+                {
+                    "name": "List Branches",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/branches",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "branches"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Branch",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Mumbai City Branch\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/branches",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "branches"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Branch by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/branches/{{branch_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "branches",
+                                "{{branch_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Branch",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Mumbai Head Branch\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/branches/{{branch_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "branches",
+                                "{{branch_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Branch",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/branches/{{branch_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "branches",
+                                "{{branch_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "07. Departments",
+            "item": [
+                {
+                    "name": "List Departments",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/departments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Department",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Marketing Department\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/departments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Department by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/departments/{{department_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments",
+                                "{{department_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Department",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Digital Marketing Department\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/departments/{{department_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments",
+                                "{{department_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Department",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/departments/{{department_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "departments",
+                                "{{department_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "08. Vendors",
+            "item": [
+                {
+                    "name": "List Vendors",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/vendor",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "vendor"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Vendor",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"vendor_name\": \"Acme Advertising Media\",\n    \"vendor_address\": \"404 Industrial Park, Mumbai\",\n    \"vendor_gst_no\": \"27AAACA1234A1Z5\",\n    \"vendor_contact\": \"+91 9876543210\",\n    \"vendor_email\": \"contact@acmeadvertising.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/vendor",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "vendor"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Vendor by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/vendor/{{vendor_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "vendor",
+                                "{{vendor_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Vendor",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"vendor_name\": \"Acme Global Media Pvt Ltd\",\n    \"vendor_contact\": \"+91 9876543211\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/vendor/{{vendor_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "vendor",
+                                "{{vendor_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Vendor",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/vendor/{{vendor_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "vendor",
+                                "{{vendor_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "09. RO Forms",
+            "item": [
+                {
+                    "name": "List RO Forms (Filtered & Paginated)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/roForm?from_date=2026-01-01&to_date=2026-12-31&limit=15&page=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roForm"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from_date",
+                                    "value": "2026-01-01"
+                                },
+                                {
+                                    "key": "to_date",
+                                    "value": "2026-12-31"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "15"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create RO Form",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"vendor_id\": 1,\n    \"client_name\": \"Reliance Retail\",\n    \"service\": \"Digital Ads\",\n    \"ad_type\": \"Display Banner\",\n    \"ad_unit\": \"300x250\",\n    \"buy_type\": \"CPM\",\n    \"deliverables\": \"Impressions\",\n    \"volume\": 50000,\n    \"bid\": 2.5,\n    \"completion_date\": \"2026-12-31\",\n    \"buying_price\": 100000,\n    \"selling_price\": 125000,\n    \"commission_percent\": 20\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/roForm",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roForm"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get RO Form by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/roForm/{{ro_form_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roForm",
+                                "{{ro_form_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update RO Form",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"client_name\": \"Reliance Digital Retail Ltd\",\n    \"volume\": 60000,\n    \"selling_price\": 150000\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/roForm/{{ro_form_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roForm",
+                                "{{ro_form_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Send Email to Assigned Managers",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/roForm/{{ro_form_id}}/send-email",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roForm",
+                                "{{ro_form_id}}",
+                                "send-email"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Approve RO Form",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/roForm/{{ro_form_id}}/approve",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roForm",
+                                "{{ro_form_id}}",
+                                "approve"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Reject RO Form",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"rejection_reason\": \"Rate is not commercially viable.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/roForm/{{ro_form_id}}/reject",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roForm",
+                                "{{ro_form_id}}",
+                                "reject"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Cancel RO Form",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"cancellation_reason\": \"Client withdrew the campaign order.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/roForm/{{ro_form_id}}/cancel",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roForm",
+                                "{{ro_form_id}}",
+                                "cancel"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Send RO to Accounts (with PDF)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/ro-form/{{ro_form_id}}/send-to-accounts",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "ro-form",
+                                "{{ro_form_id}}",
+                                "send-to-accounts"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete RO Form",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/roForm/{{ro_form_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "roForm",
+                                "{{ro_form_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "10. Accounts",
+            "item": [
+                {
+                    "name": "List Accounts (Approved ROs)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/accounts",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "accounts"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Accounts Invoice Record",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ro_form_id\": 1,\n    \"bill_name\": \"Reliance Retail Dec Campaign\",\n    \"anvis_invoice\": \"INV-ANVIS-2026-001\",\n    \"anvis_invoice_date\": \"2026-10-15\",\n    \"anvis_status\": \"issued\",\n    \"vendor_invoice\": \"INV-VEND-9921\",\n    \"vendor_invoice_date\": \"2026-10-14\",\n    \"vendor_status\": \"pending\",\n    \"external_amount\": 125000,\n    \"executive\": \"Accounts Executive\",\n    \"comments\": \"Processed for billing\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/accounts",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "accounts"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Accounts Entry by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/accounts/{{account_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "accounts",
+                                "{{account_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Accounts Entry",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"anvis_status\": \"paid\",\n    \"vendor_status\": \"cleared\",\n    \"comments\": \"Payment received in full\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/accounts/{{account_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "accounts",
+                                "{{account_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Export Accounts to Excel",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/accounts/export?from_date=2026-01-01&to_date=2026-12-31",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "accounts",
+                                "export"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from_date",
+                                    "value": "2026-01-01"
+                                },
+                                {
+                                    "key": "to_date",
+                                    "value": "2026-12-31"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Accounts Entry",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/accounts/{{account_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "accounts",
+                                "{{account_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

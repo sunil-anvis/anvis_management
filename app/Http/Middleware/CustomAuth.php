@@ -34,6 +34,8 @@ class CustomAuth
 
         // Authenticate the user for the current request
         auth()->login($userToken->user);
+        $request->setUserResolver(fn () => $userToken->user);
+        $request->attributes->set('user', $userToken->user);
 
         return $next($request);
     }

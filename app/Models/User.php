@@ -102,9 +102,39 @@ class User extends Authenticatable
         return $this->hasMany(UserToken::class);
     }
 
+    public function roles()
+    {
+        return $this->role();
+    }
+
+    public function departments()
+    {
+        return $this->department();
+    }
+
+    public function getRolesAttribute()
+    {
+        return $this->role;
+    }
+
+    public function getRolesIdAttribute()
+    {
+        return $this->role_id;
+    }
+
+    public function getDepartmentsAttribute()
+    {
+        return $this->department;
+    }
+
+    public function getDepartmentsIdAttribute()
+    {
+        return $this->department_id;
+    }
+
     /**
      * Check if the user has a specific permission.
-     * Super admins automatically return true.
+     * Super admins and admins automatically return true.
      */
     public function hasPermission($permissionName)
     {
@@ -112,7 +142,7 @@ class User extends Authenticatable
             return false;
         }
 
-        if ($this->role->name === 'super-admin') {
+        if ($this->role->name === 'superadmin' || $this->role->name === 'admin') {
             return true;
         }
 

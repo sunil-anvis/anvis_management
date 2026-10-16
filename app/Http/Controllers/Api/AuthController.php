@@ -55,7 +55,7 @@ class AuthController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'User registered successfully',
-                'user' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead']),
+                'user' => $this->formatAuthUser($user),
                 'token' => $tokenString,
             ], 201);
         } catch (ValidationException $e) {
@@ -106,7 +106,7 @@ class AuthController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Logged in successfully',
-                'user' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead']),
+                'user' => $this->formatAuthUser($user),
                 'token' => $tokenString,
             ], 200);
         } catch (ValidationException $e) {
@@ -140,11 +140,62 @@ class AuthController extends Controller
         try {
             return response()->json([
                 'status' => 'success',
-                'user' => $request->user()->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])
+                'user' => $this->formatAuthUser($request->user())
             ], 200);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('AuthController Error: ' . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => 'Failed to fetch user', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    public function profile(Request $request)
+    {
+        return $this->user($request);
+    }
+
+    public function refresh(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $tokenString = Str::random(60);
+
+            $user->tokens()->create([
+                'token' => hash('sha256', $tokenString),
+                'ip_address' => $request->ip(),
+                'expiry_time' => Carbon::now()->addHours(24),
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Token refreshed successfully',
+                'token' => $tokenString,
+            ], 200);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('AuthController Error: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Failed to refresh token', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Format a clean, lightweight authenticated user payload.
+     */
+    protected function formatAuthUser(User $user): array
+    {
+        $user->loadMissing(['role.permissions', 'branch', 'department']);
+
+        return [
+            'id' => $user->id,
+            'username' => $user->username,
+            'email' => $user->email,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'role' => $user->role ? $user->role->name : null,
+            'branch' => $user->branch ? $user->branch->name : null,
+            'department' => $user->department ? $user->department->name : null,
+            'status' => $user->status,
+            'permissions' => $user->role && $user->role->permissions
+                ? $user->role->permissions->pluck('name')->values()->all()
+                : [],
+        ];
     }
 }
