@@ -17,15 +17,31 @@ class AuthController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|string|max:255',
+                'username' => 'required|string|max:255|unique:users',
+                'first_name' => 'nullable|string|max:255',
+                'last_name' => 'nullable|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:8',
+                'role_id' => 'nullable|exists:roles,id',
+                'branch_id' => 'nullable|exists:branches,id',
+                'department_id' => 'nullable|exists:departments,id',
+                'primary_lead_id' => 'nullable|exists:users,id',
+                'secondary_lead_id' => 'nullable|exists:users,id',
+                'status' => 'nullable|string|in:active,inactive,suspended',
             ]);
 
             $user = User::create([
-                'name' => $validated['name'],
+                'username' => $validated['username'],
+                'first_name' => $validated['first_name'] ?? null,
+                'last_name' => $validated['last_name'] ?? null,
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
+                'role_id' => $validated['role_id'] ?? null,
+                'branch_id' => $validated['branch_id'] ?? null,
+                'department_id' => $validated['department_id'] ?? null,
+                'primary_lead_id' => $validated['primary_lead_id'] ?? null,
+                'secondary_lead_id' => $validated['secondary_lead_id'] ?? null,
+                'status' => $validated['status'] ?? 'active',
             ]);
 
             $tokenString = Str::random(60);
@@ -39,7 +55,7 @@ class AuthController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'User registered successfully',
-                'user' => $user,
+                'user' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead']),
                 'token' => $tokenString,
             ], 201);
         } catch (ValidationException $e) {
@@ -54,11 +70,23 @@ class AuthController extends Controller
     {
         try {
             $validated = $request->validate([
-                'email' => 'required|string|email',
+                'login' => 'sometimes|string',
+                'email' => 'sometimes|string',
                 'password' => 'required|string',
             ]);
 
-            $user = User::where('email', $validated['email'])->first();
+            $loginIdentifier = $request->input('login', $request->input('email'));
+
+            if (!$loginIdentifier) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The login or email field is required.',
+                ], 422);
+            }
+
+            $user = User::where('email', $loginIdentifier)
+                ->orWhere('username', $loginIdentifier)
+                ->first();
 
             if (!$user || !Hash::check($validated['password'], $user->password)) {
                 return response()->json([
@@ -78,7 +106,7 @@ class AuthController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Logged in successfully',
-                'user' => $user,
+                'user' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead']),
                 'token' => $tokenString,
             ], 200);
         } catch (ValidationException $e) {
@@ -112,7 +140,7 @@ class AuthController extends Controller
         try {
             return response()->json([
                 'status' => 'success',
-                'user' => $request->user()->load(['role.permissions'])
+                'user' => $request->user()->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])
             ], 200);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('AuthController Error: ' . $e->getMessage());

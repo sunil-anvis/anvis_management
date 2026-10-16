@@ -18,10 +18,17 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'username',
+        'first_name',
+        'last_name',
         'email',
         'password',
         'role_id',
+        'branch_id',
+        'department_id',
+        'primary_lead_id',
+        'secondary_lead_id',
+        'status',
     ];
 
     /**
@@ -46,9 +53,48 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Get full name accessor.
+     */
+    public function getNameAttribute(): string
+    {
+        $fullName = trim("{$this->first_name} {$this->last_name}");
+        return $fullName !== '' ? $fullName : ($this->username ?? '');
+    }
+
     public function role()
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function primaryLead()
+    {
+        return $this->belongsTo(User::class, 'primary_lead_id');
+    }
+
+    public function secondaryLead()
+    {
+        return $this->belongsTo(User::class, 'secondary_lead_id');
+    }
+
+    public function primarySubordinates()
+    {
+        return $this->hasMany(User::class, 'primary_lead_id');
+    }
+
+    public function secondarySubordinates()
+    {
+        return $this->hasMany(User::class, 'secondary_lead_id');
     }
 
     public function tokens()

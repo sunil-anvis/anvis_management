@@ -6,6 +6,8 @@ use Illuminate\Database\Seeder;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Models\User;
+use App\Models\Branch;
+use App\Models\Department;
 use Illuminate\Support\Facades\Hash;
 
 class RolesAndPermissionsSeeder extends Seeder
@@ -24,28 +26,41 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // create roles
         $superAdminRole = Role::firstOrCreate(['name' => 'super-admin']);
-        // Super admin doesn't strictly need mapping since hasPermission bypasses, but good practice
         $superAdminRole->permissions()->sync([$p1->id, $p2->id, $p3->id, $p4->id, $p5->id]);
 
         $userRole = Role::firstOrCreate(['name' => 'user']);
-        // user role has no specific permissions for now
+
+        // create default branch & department
+        $defaultBranch = Branch::firstOrCreate(['name' => 'Main Branch']);
+        $defaultDepartment = Department::firstOrCreate(['name' => 'Head Office']);
 
         // create a default super admin user
-        User::firstOrCreate([
+        $admin = User::firstOrCreate([
             'email' => 'admin@admin.com',
         ], [
-            'name' => 'Super Admin',
+            'username' => 'admin',
+            'first_name' => 'Super',
+            'last_name' => 'Admin',
             'password' => Hash::make('password'),
             'role_id' => $superAdminRole->id,
+            'branch_id' => $defaultBranch->id,
+            'department_id' => $defaultDepartment->id,
+            'status' => 'active',
         ]);
 
         // create a default normal user
         User::firstOrCreate([
             'email' => 'user@user.com',
         ], [
-            'name' => 'Normal User',
+            'username' => 'normaluser',
+            'first_name' => 'Normal',
+            'last_name' => 'User',
             'password' => Hash::make('password'),
             'role_id' => $userRole->id,
+            'branch_id' => $defaultBranch->id,
+            'department_id' => $defaultDepartment->id,
+            'primary_lead_id' => $admin->id,
+            'status' => 'active',
         ]);
     }
 }

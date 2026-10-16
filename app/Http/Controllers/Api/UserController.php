@@ -15,7 +15,7 @@ class UserController extends Controller
         try {
             return response()->json([
                 'status' => 'success',
-                'data' => User::with('role.permissions')->get()
+                'data' => User::with(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])->get()
             ], 200);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('UserController Error: ' . $e->getMessage());
@@ -27,23 +27,37 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|string|max:255',
+                'username' => 'required|string|max:255|unique:users',
+                'first_name' => 'nullable|string|max:255',
+                'last_name' => 'nullable|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:8',
                 'role_id' => 'nullable|exists:roles,id',
+                'branch_id' => 'nullable|exists:branches,id',
+                'department_id' => 'nullable|exists:departments,id',
+                'primary_lead_id' => 'nullable|exists:users,id',
+                'secondary_lead_id' => 'nullable|exists:users,id',
+                'status' => 'nullable|string|in:active,inactive,suspended',
             ]);
 
             $user = User::create([
-                'name' => $validated['name'],
+                'username' => $validated['username'],
+                'first_name' => $validated['first_name'] ?? null,
+                'last_name' => $validated['last_name'] ?? null,
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'role_id' => $validated['role_id'] ?? null,
+                'branch_id' => $validated['branch_id'] ?? null,
+                'department_id' => $validated['department_id'] ?? null,
+                'primary_lead_id' => $validated['primary_lead_id'] ?? null,
+                'secondary_lead_id' => $validated['secondary_lead_id'] ?? null,
+                'status' => $validated['status'] ?? 'active',
             ]);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'User created successfully',
-                'data' => $user->load('role.permissions')
+                'data' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])
             ], 201);
         } catch (ValidationException $e) {
             return response()->json(['status' => 'error', 'message' => 'Validation error', 'errors' => $e->errors()], 422);
@@ -58,7 +72,7 @@ class UserController extends Controller
         try {
             return response()->json([
                 'status' => 'success',
-                'data' => $user->load('role.permissions')
+                'data' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])
             ], 200);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('UserController Error: ' . $e->getMessage());
@@ -70,10 +84,17 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'sometimes|string|max:255',
+                'username' => 'sometimes|string|max:255|unique:users,username,' . $user->id,
+                'first_name' => 'sometimes|nullable|string|max:255',
+                'last_name' => 'sometimes|nullable|string|max:255',
                 'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
                 'password' => 'sometimes|string|min:8',
                 'role_id' => 'sometimes|nullable|exists:roles,id',
+                'branch_id' => 'sometimes|nullable|exists:branches,id',
+                'department_id' => 'sometimes|nullable|exists:departments,id',
+                'primary_lead_id' => 'sometimes|nullable|exists:users,id',
+                'secondary_lead_id' => 'sometimes|nullable|exists:users,id',
+                'status' => 'sometimes|string|in:active,inactive,suspended',
             ]);
 
             if (isset($validated['password'])) {
@@ -85,7 +106,7 @@ class UserController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'User updated successfully',
-                'data' => $user->load('role.permissions')
+                'data' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])
             ], 200);
         } catch (ValidationException $e) {
             return response()->json(['status' => 'error', 'message' => 'Validation error', 'errors' => $e->errors()], 422);
