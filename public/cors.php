@@ -23,7 +23,7 @@ return [
 
   'allowed_origins_patterns' => [],
 
-  'allowed_headers' => ['*','Authorization', 'Content-Type', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers'],
+  'allowed_headers' => ['*','Authorization', 'Content-Type', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers', 'Access-Control-Allow-Origin'],
 
   'exposed_headers' => [],
 
