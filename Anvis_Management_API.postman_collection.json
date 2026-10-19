@@ -425,7 +425,7 @@
             "name": "02. Dashboard",
             "item": [
                 {
-                    "name": "Get Dashboard Statistics",
+                    "name": "Get Merged Dashboard (RO + Domain)",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -434,13 +434,40 @@
                                 "value": "application/json"
                             }
                         ],
+                        "description": "Get unified dashboard statistics combining both RO Management and Domain Management. Admin and Superadmin see all data across all departments and branches. Managers and Employees see department-wise statistics. Supports optional date filters and admin department/branch filtering.",
                         "url": {
-                            "raw": "{{base_url}}/dashboard",
+                            "raw": "{{base_url}}/dashboard?department_id=&branch_id=&from_date=2026-01-01&to_date=2026-12-31",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
                                 "dashboard"
+                            ],
+                            "query": [
+                                {
+                                    "key": "department_id",
+                                    "value": "",
+                                    "description": "Filter by department ID (Admin only)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "branch_id",
+                                    "value": "",
+                                    "description": "Filter by branch ID (Admin only)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "from_date",
+                                    "value": "2026-01-01",
+                                    "description": "Filter records from date",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "to_date",
+                                    "value": "2026-12-31",
+                                    "description": "Filter records to date",
+                                    "disabled": true
+                                }
                             ]
                         }
                     }
