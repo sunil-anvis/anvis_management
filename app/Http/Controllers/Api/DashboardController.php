@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
+use App\Models\Department;
 use App\Models\Domain;
 use App\Models\Payment;
 use App\Models\PurchaseInvoice;
@@ -37,6 +39,8 @@ class DashboardController extends Controller
             ], 401);
         }
 
+        $user->loadMissing(['role', 'branch', 'department']);
+
         $roleName = strtolower(
             $user->role?->name ?? $user->roles?->name ?? ''
         );
@@ -52,7 +56,7 @@ class DashboardController extends Controller
         $canViewUser = $user->hasPermission('view-user') || in_array($roleName, ['admin', 'superadmin', 'manager', 'lead']);
         $canViewVendor = $user->hasPermission('view-vendor') || in_array($roleName, ['admin', 'superadmin', 'manager', 'lead']);
 
-        // Department & Branch scoping (only IDs, no names)
+        // Department & Branch scoping
         if ($isAdmin) {
             $departmentId = $request->filled('department_id') ? (int)$request->department_id : null;
             $branchId = $request->filled('branch_id') ? (int)$request->branch_id : null;
@@ -61,15 +65,21 @@ class DashboardController extends Controller
             $branchId = $user->branch_id ?? null;
         }
 
+        $branchName = $branchId
+            ? (Branch::find($branchId)?->name ?? $user->branch?->name)
+            : ($user->branch?->name ?? null);
+
+        $departmentName = $departmentId
+            ? (Department::find($departmentId)?->name ?? $user->department?->name)
+            : ($user->department?->name ?? null);
+
         $fromDate = $request->query('from_date');
         $toDate = $request->query('to_date');
 
         $data = [
-            'scope' => [
-                'role' => $roleName,
-                'department_id' => $departmentId,
-                'branch_id' => $branchId,
-            ],
+            'role' => $roleName,
+            'branch' => $branchName,
+            'department' => $departmentName,
         ];
 
         // ---------------------------------------------------------

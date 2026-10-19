@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Department;
+use Illuminate\Database\Seeder;
 
 class DepartmentSeeder extends Seeder
 {
@@ -13,9 +13,13 @@ class DepartmentSeeder extends Seeder
     public function run(): void
     {
         $departments = [
-            'tech',
-            'accounts',
-            'paid media',
+            'Accounts',
+            'Tech',
+            'Paid Media',
+            'Client Servicing',
+            'Creative Department',
+            'CEO',
+            'Admin',
         ];
 
         foreach ($departments as $department) {
