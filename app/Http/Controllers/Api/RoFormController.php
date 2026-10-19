@@ -881,7 +881,7 @@ class RoFormController extends Controller implements HasMiddleware
      */
     protected function calculateRevenueSummary($query): array
     {
-        $baseQuery = clone $query;
+        $baseQuery = (clone $query)->reorder();
 
         $stats = $baseQuery->selectRaw("
             COUNT(id) as total_ro_count,
