@@ -30,6 +30,11 @@ class RolePermissionSeeder extends Seeder
 
         // 2. Manager permissions
         $managerPermissions = [
+            // Users
+            'view-user',
+            'create-user',
+            'edit-user',
+
             // Vendors
             'view-vendor',
             'create-vendor',
@@ -72,6 +77,9 @@ class RolePermissionSeeder extends Seeder
 
         // 3. Employee permissions
         $employeePermissions = [
+            // Users
+            'view-user',
+
             // Vendors
             'view-vendor',
             'create-vendor',

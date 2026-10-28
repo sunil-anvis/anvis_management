@@ -7,15 +7,82 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class UserController extends Controller
+class UserController extends Controller implements HasMiddleware
 {
-    public function index()
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permissions:view-user', only: ['index', 'show']),
+            new Middleware('permissions:create-user', only: ['store']),
+            new Middleware('permissions:edit-user', only: ['update', 'assignRole', 'removeRole']),
+            new Middleware('permissions:delete-user', only: ['destroy']),
+        ];
+    }
+
+    /**
+     * Helper to get authenticated user and role name.
+     */
+    protected function getAuthUserAndRole(Request $request): array
+    {
+        $user = $request->attributes->get('user') ?? $request->user() ?? auth()->user();
+        if ($user) {
+            $user->loadMissing(['role', 'department']);
+        }
+        $roleName = strtolower($user?->role?->name ?? $user?->roles?->name ?? '');
+        return [$user, $roleName];
+    }
+
+    public function index(Request $request)
     {
         try {
+            [$authUser, $roleName] = $this->getAuthUserAndRole($request);
+            $isAdmin = in_array($roleName, ['admin', 'superadmin']);
+
+            $query = User::with(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead']);
+
+            if ($isAdmin) {
+                // Admin and superadmin can view all users, or optionally filter by department
+                if ($request->filled('department_id')) {
+                    $query->where('department_id', $request->department_id);
+                }
+            } else {
+                // Regular user can only see users from their own department
+                $departmentId = $authUser?->department_id ?? $authUser?->departments_id ?? null;
+                if ($departmentId !== null) {
+                    $query->where('department_id', $departmentId);
+                } else {
+                    $query->where('id', $authUser?->id);
+                }
+            }
+
+            if ($request->filled('branch_id')) {
+                $query->where('branch_id', $request->branch_id);
+            }
+
+            if ($request->filled('role_id')) {
+                $query->where('role_id', $request->role_id);
+            }
+
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('search')) {
+                $search = trim($request->search);
+                $query->where(function ($q) use ($search) {
+                    $q->where('username', 'like', "%{$search}%")
+                      ->orWhere('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+
             return response()->json([
                 'status' => 'success',
-                'data' => User::with(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])->get()
+                'data' => $query->get()
             ], 200);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('UserController Error: ' . $e->getMessage());
@@ -26,6 +93,9 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
+            [$authUser, $roleName] = $this->getAuthUserAndRole($request);
+            $isAdmin = in_array($roleName, ['admin', 'superadmin']);
+
             $validated = $request->validate([
                 'username' => 'required|string|max:255|unique:users',
                 'first_name' => 'nullable|string|max:255',
@@ -39,6 +109,17 @@ class UserController extends Controller
                 'secondary_lead_id' => 'nullable|exists:users,id',
                 'status' => 'nullable|string|in:active,inactive,suspended',
             ]);
+
+            if (!$isAdmin) {
+                $departmentId = $authUser?->department_id ?? $authUser?->departments_id ?? null;
+                if (isset($validated['department_id']) && (int)$validated['department_id'] !== (int)$departmentId) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Cannot create user outside your department'
+                    ], 403);
+                }
+                $validated['department_id'] = $departmentId;
+            }
 
             $user = User::create([
                 'username' => $validated['username'],
@@ -67,9 +148,31 @@ class UserController extends Controller
         }
     }
 
-    public function show(User $user)
+    public function show(Request $request, User $user)
     {
         try {
+            [$authUser, $roleName] = $this->getAuthUserAndRole($request);
+            $isAdmin = in_array($roleName, ['admin', 'superadmin']);
+
+            if (!$isAdmin) {
+                $departmentId = $authUser?->department_id ?? $authUser?->departments_id ?? null;
+                if ($departmentId !== null) {
+                    if ((int)$user->department_id !== (int)$departmentId) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Unauthorized to view user outside your department'
+                        ], 403);
+                    }
+                } else {
+                    if ((int)$user->id !== (int)$authUser?->id) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Unauthorized to view this user'
+                        ], 403);
+                    }
+                }
+            }
+
             return response()->json([
                 'status' => 'success',
                 'data' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])
@@ -83,6 +186,19 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         try {
+            [$authUser, $roleName] = $this->getAuthUserAndRole($request);
+            $isAdmin = in_array($roleName, ['admin', 'superadmin']);
+
+            if (!$isAdmin) {
+                $departmentId = $authUser?->department_id ?? $authUser?->departments_id ?? null;
+                if ($departmentId !== null && (int)$user->department_id !== (int)$departmentId) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Unauthorized to update user outside your department'
+                    ], 403);
+                }
+            }
+
             $validated = $request->validate([
                 'username' => 'sometimes|string|max:255|unique:users,username,' . $user->id,
                 'first_name' => 'sometimes|nullable|string|max:255',
@@ -96,6 +212,16 @@ class UserController extends Controller
                 'secondary_lead_id' => 'sometimes|nullable|exists:users,id',
                 'status' => 'sometimes|string|in:active,inactive,suspended',
             ]);
+
+            if (!$isAdmin) {
+                $departmentId = $authUser?->department_id ?? $authUser?->departments_id ?? null;
+                if (isset($validated['department_id']) && (int)$validated['department_id'] !== (int)$departmentId) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Cannot assign user to another department'
+                    ], 403);
+                }
+            }
 
             if (isset($validated['password'])) {
                 $validated['password'] = Hash::make($validated['password']);
@@ -116,9 +242,22 @@ class UserController extends Controller
         }
     }
 
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
         try {
+            [$authUser, $roleName] = $this->getAuthUserAndRole($request);
+            $isAdmin = in_array($roleName, ['admin', 'superadmin']);
+
+            if (!$isAdmin) {
+                $departmentId = $authUser?->department_id ?? $authUser?->departments_id ?? null;
+                if ($departmentId !== null && (int)$user->department_id !== (int)$departmentId) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Unauthorized to delete user outside your department'
+                    ], 403);
+                }
+            }
+
             $user->delete();
             return response()->json([
                 'status' => 'success',
@@ -133,6 +272,19 @@ class UserController extends Controller
     public function assignRole(Request $request, User $user)
     {
         try {
+            [$authUser, $roleName] = $this->getAuthUserAndRole($request);
+            $isAdmin = in_array($roleName, ['admin', 'superadmin']);
+
+            if (!$isAdmin) {
+                $departmentId = $authUser?->department_id ?? $authUser?->departments_id ?? null;
+                if ($departmentId !== null && (int)$user->department_id !== (int)$departmentId) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Unauthorized to assign role to user outside your department'
+                    ], 403);
+                }
+            }
+
             $validated = $request->validate([
                 'role_id' => 'required|exists:roles,id',
             ]);
@@ -155,6 +307,19 @@ class UserController extends Controller
     public function removeRole(Request $request, User $user)
     {
         try {
+            [$authUser, $roleName] = $this->getAuthUserAndRole($request);
+            $isAdmin = in_array($roleName, ['admin', 'superadmin']);
+
+            if (!$isAdmin) {
+                $departmentId = $authUser?->department_id ?? $authUser?->departments_id ?? null;
+                if ($departmentId !== null && (int)$user->department_id !== (int)$departmentId) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Unauthorized to remove role from user outside your department'
+                    ], 403);
+                }
+            }
+
             $user->update(['role_id' => null]);
 
             return response()->json([
@@ -168,3 +333,4 @@ class UserController extends Controller
         }
     }
 }
+
