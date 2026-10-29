@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -41,25 +42,30 @@ class UserController extends Controller implements HasMiddleware
             [$authUser, $roleName] = $this->getAuthUserAndRole($request);
             $isAdmin = in_array($roleName, ['admin', 'superadmin']);
 
-            $query = User::with(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead']);
+            $query = User::with(['role', 'branch', 'department']);
 
             if ($isAdmin) {
-                // Admin and superadmin can view all users, or optionally filter by department
+                // Admin / superadmin: see all users; optionally filter by branch or department
                 if ($request->filled('department_id')) {
                     $query->where('department_id', $request->department_id);
                 }
+                if ($request->filled('branch_id')) {
+                    $query->where('branch_id', $request->branch_id);
+                }
             } else {
-                // Regular user can only see users from their own department
+                // Manager / employee: restricted to own department AND own branch only
                 $departmentId = $authUser?->department_id ?? $authUser?->departments_id ?? null;
-                if ($departmentId !== null) {
+                $branchId     = $authUser?->branch_id ?? null;
+
+                if ($departmentId !== null && $branchId !== null) {
+                    $query->where('department_id', $departmentId)
+                          ->where('branch_id', $branchId);
+                } elseif ($departmentId !== null) {
                     $query->where('department_id', $departmentId);
                 } else {
+                    // Fallback: can only see themselves
                     $query->where('id', $authUser?->id);
                 }
-            }
-
-            if ($request->filled('branch_id')) {
-                $query->where('branch_id', $request->branch_id);
             }
 
             if ($request->filled('role_id')) {
@@ -82,7 +88,7 @@ class UserController extends Controller implements HasMiddleware
 
             return response()->json([
                 'status' => 'success',
-                'data' => $query->get()
+                'data' => UserResource::collection($query->get())
             ], 200);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('UserController Error: ' . $e->getMessage());
@@ -138,7 +144,7 @@ class UserController extends Controller implements HasMiddleware
             return response()->json([
                 'status' => 'success',
                 'message' => 'User created successfully',
-                'data' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])
+                'data' => new UserResource($user->load(['role', 'branch', 'department']))
             ], 201);
         } catch (ValidationException $e) {
             return response()->json(['status' => 'error', 'message' => 'Validation error', 'errors' => $e->errors()], 422);
@@ -175,7 +181,7 @@ class UserController extends Controller implements HasMiddleware
 
             return response()->json([
                 'status' => 'success',
-                'data' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])
+                'data' => new UserResource($user->load(['role', 'branch', 'department']))
             ], 200);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('UserController Error: ' . $e->getMessage());
@@ -232,7 +238,7 @@ class UserController extends Controller implements HasMiddleware
             return response()->json([
                 'status' => 'success',
                 'message' => 'User updated successfully',
-                'data' => $user->load(['role.permissions', 'branch', 'department', 'primaryLead', 'secondaryLead'])
+                'data' => new UserResource($user->load(['role', 'branch', 'department']))
             ], 200);
         } catch (ValidationException $e) {
             return response()->json(['status' => 'error', 'message' => 'Validation error', 'errors' => $e->errors()], 422);

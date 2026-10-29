@@ -3,36 +3,36 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\RoFormMail;
+use App\Mail\SendRoToAccountsMail;
 use App\Models\RoForm;
-use App\Models\Vendor;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Services\AmountCalculator;
 use App\Services\RoNumberGenerator;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\RoFormMail;
-use Illuminate\Support\Facades\Log;
-
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-
-use App\Mail\SendRoToAccountsMail;
+use Illuminate\Support\Facades\Validator;
 
 class RoFormController extends Controller implements HasMiddleware
 {
-    public static function middleware():array{
+    public static function middleware(): array
+    {
 
-        return[
-            new Middleware ('permissions:view-ro-form', only:['index','show']),
-            new Middleware ('permissions:create-ro-form', only:['store']),
-            new Middleware ('permissions:edit-ro-form', only:['update']),
-            new Middleware ('permissions:delete-ro-form', only:['destroy']),
-            new Middleware ('permissions:view-ro-revenue', only:['revenueSummary'])
+        return [
+            new Middleware('permissions:view-ro-form', only: ['index', 'show', 'downloadPdf']),
+            new Middleware('permissions:create-ro-form', only: ['store']),
+            new Middleware('permissions:edit-ro-form', only: ['update']),
+            new Middleware('permissions:delete-ro-form', only: ['destroy']),
+            new Middleware('permissions:view-ro-revenue', only: ['revenueSummary']),
         ];
     }
+
     protected $amountCalculator;
 
     protected $roNumberGenerator;
@@ -55,11 +55,11 @@ class RoFormController extends Controller implements HasMiddleware
 
         $search = trim($request->search);
 
-        if (!empty($search)) {
+        if (! empty($search)) {
             $query->where(function ($q) use ($search) {
-                $q->where('ro_number', 'like', '%' . $search . '%')
-                    ->orWhere('vendor_name', 'like', '%' . $search . '%')
-                    ->orWhere('client_name', 'like', '%' . $search . '%');
+                $q->where('ro_number', 'like', '%'.$search.'%')
+                    ->orWhere('vendor_name', 'like', '%'.$search.'%')
+                    ->orWhere('client_name', 'like', '%'.$search.'%');
             });
         }
 
@@ -193,7 +193,7 @@ class RoFormController extends Controller implements HasMiddleware
         return response()->json([
             'success' => true,
             'message' => 'successfully created',
-            'data' => $roForm
+            'data' => $roForm,
         ], 201);
     }
 
@@ -217,7 +217,7 @@ class RoFormController extends Controller implements HasMiddleware
             if ($roForm->departments_id != $user->departments_id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are not authorized to view this RO Form.'
+                    'message' => 'You are not authorized to view this RO Form.',
                 ], 403);
             }
         }
@@ -247,14 +247,14 @@ class RoFormController extends Controller implements HasMiddleware
         if ($role !== 'admin' && $roForm->departments_id != $user->departments_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorized to edit this RO Form.'
+                'message' => 'You are not authorized to edit this RO Form.',
             ], 403);
         }
 
         if (in_array($roForm->status, ['approved', 'cancelled'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'This RO Form cannot be edited.'
+                'message' => 'This RO Form cannot be edited.',
             ], 422);
         }
 
@@ -340,17 +340,17 @@ class RoFormController extends Controller implements HasMiddleware
 
         $roForm = RoForm::find($id);
 
-        if (!$roForm) {
+        if (! $roForm) {
             return response()->json([
                 'success' => false,
-                'message' => 'RO form not found'
+                'message' => 'RO form not found',
             ], 404);
         }
 
         if ($roForm->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only pending forms can be deleted'
+                'message' => 'Only pending forms can be deleted',
             ], 422);
         }
 
@@ -360,7 +360,7 @@ class RoFormController extends Controller implements HasMiddleware
             if ($roForm->departments_id != $user->departments_id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are not authorized to delete this RO Form.'
+                    'message' => 'You are not authorized to delete this RO Form.',
                 ], 403);
             }
 
@@ -370,7 +370,7 @@ class RoFormController extends Controller implements HasMiddleware
             ) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Only the assigned manager or Admin can delete the RO form.'
+                    'message' => 'Only the assigned manager or Admin can delete the RO form.',
                 ], 403);
             }
         }
@@ -384,7 +384,7 @@ class RoFormController extends Controller implements HasMiddleware
 
         return response()->json([
             'success' => true,
-            'message' => 'RO form deleted successfully.'
+            'message' => 'RO form deleted successfully.',
         ]);
     }
 
@@ -394,10 +394,10 @@ class RoFormController extends Controller implements HasMiddleware
 
         $roForm = RoForm::find($id);
 
-        if (!$roForm) {
+        if (! $roForm) {
             return response()->json([
                 'success' => false,
-                'message' => 'RO form not found'
+                'message' => 'RO form not found',
             ], 404);
         }
 
@@ -405,15 +405,15 @@ class RoFormController extends Controller implements HasMiddleware
         if (in_array($roForm->status, ['rejected', 'cancelled', 'deleted'])) {
             return response()->json([
                 'success' => false,
-                'message' => "Cannot approve a {$roForm->status} RO form."
+                'message' => "Cannot approve a {$roForm->status} RO form.",
             ], 422);
         }
 
         // Check if already fully approved by both managers (count is 2)
-        if ((int)$roForm->approved_by >= 2) {
+        if ((int) $roForm->approved_by >= 2) {
             return response()->json([
                 'success' => false,
-                'message' => 'This RO form has already been fully approved by both managers.'
+                'message' => 'This RO form has already been fully approved by both managers.',
             ], 422);
         }
 
@@ -422,10 +422,10 @@ class RoFormController extends Controller implements HasMiddleware
         $isAdmin = ($role === 'admin' || $role === 'superadmin');
         $isLead = ($user->id == $roForm->primary_lead_id || $user->id == $roForm->secondary_lead_id);
 
-        if (!$isAdmin && !$isLead) {
+        if (! $isAdmin && ! $isLead) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only assigned manager or Admin can approve the RO form.'
+                'message' => 'Only assigned manager or Admin can approve the RO form.',
             ], 403);
         }
 
@@ -434,7 +434,7 @@ class RoFormController extends Controller implements HasMiddleware
         if (in_array($user->id, $approvedLeads)) {
             return response()->json([
                 'success' => false,
-                'message' => 'You have already approved this RO form.'
+                'message' => 'You have already approved this RO form.',
             ], 422);
         }
 
@@ -459,7 +459,7 @@ class RoFormController extends Controller implements HasMiddleware
             try {
                 $emailResult = $this->dispatchSendToAccounts($roForm);
             } catch (\Throwable $e) {
-                Log::error('Failed to automatically send RO to Accounts upon approval: ' . $e->getMessage(), [
+                Log::error('Failed to automatically send RO to Accounts upon approval: '.$e->getMessage(), [
                     'ro_form_id' => $roForm->id,
                     'error' => $e->getMessage(),
                 ]);
@@ -479,7 +479,7 @@ class RoFormController extends Controller implements HasMiddleware
             'message' => $approvalMessage,
             'approved_by' => $approvedCount,
             'email_sent' => $emailResult['sent'] ?? false,
-            'data' => $roForm
+            'data' => $roForm,
         ], 200);
     }
 
@@ -489,23 +489,23 @@ class RoFormController extends Controller implements HasMiddleware
 
         $roForm = RoForm::find($id);
 
-        if(!$roForm){
+        if (! $roForm) {
             return response()->json([
-                'success'=>false,
-                'message'=> 'Ro form not found'
-            ],404);
+                'success' => false,
+                'message' => 'Ro form not found',
+            ], 404);
         }
 
-        $valid = Validator::make($request->all(),[
-            'rejection_reason' => 'required|string|max:255'
+        $valid = Validator::make($request->all(), [
+            'rejection_reason' => 'required|string|max:255',
         ]);
 
-        if($valid->fails()){
+        if ($valid->fails()) {
             return response()->json([
-                'success'=>false,
-                'message'=>'Validation error',
-                'error'=>$valid->errors()
-            ],422 );
+                'success' => false,
+                'message' => 'Validation error',
+                'error' => $valid->errors(),
+            ], 422);
         }
 
         $reason = $valid->validated();
@@ -520,29 +520,29 @@ class RoFormController extends Controller implements HasMiddleware
         ) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only assigned manager or Admin can reject'
+                'message' => 'Only assigned manager or Admin can reject',
             ], 403);
         }
 
-        if($roForm->status != 'pending'){
+        if ($roForm->status != 'pending') {
             return response()->json([
-                'success'=>false,
-                'message'=>'Only pending forms can rejected'
-            ],404);
+                'success' => false,
+                'message' => 'Only pending forms can rejected',
+            ], 404);
         }
 
         $roForm->update([
-            'status'=>'rejected',
-            'rejected_by'=>$user->id,
-            'rejection_reason'=>$reason['rejection_reason'],
-            'rejected_at'=> now()
+            'status' => 'rejected',
+            'rejected_by' => $user->id,
+            'rejection_reason' => $reason['rejection_reason'],
+            'rejected_at' => now(),
         ]);
 
         return response()->json([
-            'success'=>true,
-            'message'=>'Ro form rejected',
-            'data'=>$roForm->fresh()
-        ],200);
+            'success' => true,
+            'message' => 'Ro form rejected',
+            'data' => $roForm->fresh(),
+        ], 200);
     }
 
     public function cancel(Request $request, $id)
@@ -551,23 +551,23 @@ class RoFormController extends Controller implements HasMiddleware
 
         $roForm = RoForm::find($id);
 
-        if(!$roForm){
+        if (! $roForm) {
             return response()->json([
-                'success'=>false,
-                'message'=>'Ro Form not found'
-            ],404);
+                'success' => false,
+                'message' => 'Ro Form not found',
+            ], 404);
         }
 
-        $valid = Validator::make($request->all(),[
-            'cancellation_reason'=> 'required|string|max:255'
+        $valid = Validator::make($request->all(), [
+            'cancellation_reason' => 'required|string|max:255',
         ]);
 
-        if($valid->fails()){
+        if ($valid->fails()) {
             return response()->json([
-                'success'=>false,
-                'message'=>'Validation error',
-                'data'=>$valid->errors()
-            ],422);
+                'success' => false,
+                'message' => 'Validation error',
+                'data' => $valid->errors(),
+            ], 422);
         }
 
         $reason = $valid->validated();
@@ -582,56 +582,56 @@ class RoFormController extends Controller implements HasMiddleware
         ) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only assigned manager or Admin can cancel'
+                'message' => 'Only assigned manager or Admin can cancel',
             ], 403);
         }
 
-        if($roForm->status != 'pending' && $roForm->status != 'approved'){
+        if ($roForm->status != 'pending' && $roForm->status != 'approved') {
             return response()->json([
-                'success'=>false,
-                'message'=>'Only pending or approved Ro forms can be cancelled'
-            ],404);
+                'success' => false,
+                'message' => 'Only pending or approved Ro forms can be cancelled',
+            ], 404);
         }
 
         $roForm->update([
-            'status'=>'cancelled',
-            'cancelled_by'=>$user->id,
-            'cancellation_reason'=> $reason['cancellation_reason'],
-            'cancelled_at' => now()
+            'status' => 'cancelled',
+            'cancelled_by' => $user->id,
+            'cancellation_reason' => $reason['cancellation_reason'],
+            'cancelled_at' => now(),
         ]);
 
         return response()->json([
             'success' => true,
-            'message'=>'Successfully cancel',
-            'data'=>$roForm->fresh()
-        ],200);
+            'message' => 'Successfully cancel',
+            'data' => $roForm->fresh(),
+        ], 200);
     }
 
     public function sendEmail($id)
     {
         $roForm = RoForm::with('primaryLead', 'secondaryLead')->find($id);
 
-        if(!$roForm){
+        if (! $roForm) {
             return response()->json([
-                'success' =>false,
-                'message'=> 'Ro form not found'
-            ],404);
+                'success' => false,
+                'message' => 'Ro form not found',
+            ], 404);
         }
 
-        $emails=[];
+        $emails = [];
 
-        if($roForm->primaryLead?->email){
+        if ($roForm->primaryLead?->email) {
             $emails[] = $roForm->primaryLead->email;
         }
 
-        if($roForm->secondaryLead?->email){
+        if ($roForm->secondaryLead?->email) {
             $emails[] = $roForm->secondaryLead->email;
         }
 
         if (empty($emails)) {
             return response()->json([
                 'success' => false,
-                'message' => 'No manager email found.'
+                'message' => 'No manager email found.',
             ], 404);
         }
 
@@ -639,7 +639,7 @@ class RoFormController extends Controller implements HasMiddleware
 
         return response()->json([
             'success' => true,
-            'message' => 'Email sent successfully.'
+            'message' => 'Email sent successfully.',
         ]);
     }
 
@@ -649,21 +649,21 @@ class RoFormController extends Controller implements HasMiddleware
             'createdBy',
             'vendor',
             'primaryLead',
-            'secondaryLead'
+            'secondaryLead',
         ])->find($id);
 
-        if(!$roForm){
+        if (! $roForm) {
             return response()->json([
-                'success'=>false,
-                'message'=>'Ro form nor found'
-            ],404);
+                'success' => false,
+                'message' => 'Ro form nor found',
+            ], 404);
         }
 
         $pdf = Pdf::loadView('pdf.ro-form', compact('roForm'));
 
-        $fileName = $roForm->ro_number . '.pdf';
+        $fileName = $roForm->ro_number.'.pdf';
 
-        $filePath = 'ro/' . $fileName;
+        $filePath = 'ro/'.$fileName;
 
         Storage::disk('public')->put(
             $filePath,
@@ -672,7 +672,50 @@ class RoFormController extends Controller implements HasMiddleware
 
         return response()->json([
             'success' => true,
-            'file' => asset('storage/' . $filePath)
+            'file' => asset('storage/'.$filePath),
+        ]);
+    }
+
+    /**
+     * Stream the RO Form PDF directly as a browser download.
+     *
+     * GET /api/roForm/{id}/download-pdf
+     */
+    public function downloadPdf(Request $request, $id)
+    {
+        $roForm = RoForm::with([
+            'createdBy',
+            'vendor',
+            'primaryLead',
+            'secondaryLead',
+        ])->find($id);
+
+        if (! $roForm) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RO Form not found.',
+            ], 404);
+        }
+
+        $user = $request->attributes->get('user');
+        $role = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $isAdmin = in_array($role, ['admin', 'superadmin']);
+
+        if (! $isAdmin && $roForm->departments_id != $user->departments_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to download this RO Form.',
+            ], 403);
+        }
+
+        $pdf = Pdf::loadView('pdf.ro-form', compact('roForm'));
+
+        $fileName = $roForm->ro_number.'.pdf';
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
+            'Content-Length' => strlen($pdf->output()),
         ]);
     }
 
@@ -684,13 +727,13 @@ class RoFormController extends Controller implements HasMiddleware
             'primaryLead',
             'secondaryLead',
             'createdBy',
-            'vendor'
+            'vendor',
         ])->find($id);
 
-        if (!$roForm) {
+        if (! $roForm) {
             return response()->json([
                 'success' => false,
-                'message' => 'RO Form not found.'
+                'message' => 'RO Form not found.',
             ], 404);
         }
 
@@ -705,7 +748,7 @@ class RoFormController extends Controller implements HasMiddleware
         ) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only assigned manager or Admin can send this RO to Accounts.'
+                'message' => 'Only assigned manager or Admin can send this RO to Accounts.',
             ], 403);
         }
 
@@ -713,22 +756,22 @@ class RoFormController extends Controller implements HasMiddleware
         if ($roForm->status !== 'approved') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only approved RO Forms can be sent to Accounts.'
+                'message' => 'Only approved RO Forms can be sent to Accounts.',
             ], 422);
         }
 
         $result = $this->dispatchSendToAccounts($roForm);
 
-        if (!$result['sent']) {
+        if (! $result['sent']) {
             return response()->json([
                 'success' => false,
-                'message' => $result['message']
+                'message' => $result['message'],
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'RO sent to Accounts successfully.'
+            'message' => 'RO sent to Accounts successfully.',
         ]);
     }
 
@@ -741,7 +784,7 @@ class RoFormController extends Controller implements HasMiddleware
             'primaryLead',
             'secondaryLead',
             'createdBy',
-            'vendor'
+            'vendor',
         ]);
 
         /*
@@ -752,15 +795,15 @@ class RoFormController extends Controller implements HasMiddleware
 
         $pdf = Pdf::loadView('pdf.ro-form', compact('roForm'));
 
-        $fileName = $roForm->ro_number . '.pdf';
-        $relativePath = 'ro/' . $fileName;
+        $fileName = $roForm->ro_number.'.pdf';
+        $relativePath = 'ro/'.$fileName;
 
         Storage::disk('public')->put(
             $relativePath,
             $pdf->output()
         );
 
-        $pdfPath = storage_path('app/public/' . $relativePath);
+        $pdfPath = storage_path('app/public/'.$relativePath);
 
         /*
         |--------------------------------------------------------------------------
@@ -771,14 +814,14 @@ class RoFormController extends Controller implements HasMiddleware
         $emails = User::whereHas('departments', function ($query) {
             $query->where('name', 'Accounts');
         })
-        ->whereNotNull('email')
-        ->pluck('email')
-        ->toArray();
+            ->whereNotNull('email')
+            ->pluck('email')
+            ->toArray();
 
         if (empty($emails)) {
             return [
                 'sent' => false,
-                'message' => 'No Accounts department email found.'
+                'message' => 'No Accounts department email found.',
             ];
         }
 
@@ -794,7 +837,7 @@ class RoFormController extends Controller implements HasMiddleware
 
         return [
             'sent' => true,
-            'message' => 'RO sent to Accounts successfully.'
+            'message' => 'RO sent to Accounts successfully.',
         ];
     }
 
@@ -806,10 +849,10 @@ class RoFormController extends Controller implements HasMiddleware
     {
         $user = $request->attributes->get('user') ?? $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized'
+                'message' => 'Unauthorized',
             ], 401);
         }
 
@@ -818,10 +861,10 @@ class RoFormController extends Controller implements HasMiddleware
 
         $isPrivileged = in_array($roleName, ['admin', 'superadmin', 'accounts']) || $department === 'accounts';
 
-        if (!$isPrivileged) {
+        if (! $isPrivileged) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized. Revenue data can only be accessed by admin, super admin, and accounts.'
+                'message' => 'Unauthorized. Revenue data can only be accessed by admin, super admin, and accounts.',
             ], 403);
         }
 
@@ -840,11 +883,11 @@ class RoFormController extends Controller implements HasMiddleware
 
         // Search
         $search = trim($request->search);
-        if (!empty($search)) {
+        if (! empty($search)) {
             $query->where(function ($q) use ($search) {
-                $q->where('ro_number', 'like', '%' . $search . '%')
-                    ->orWhere('vendor_name', 'like', '%' . $search . '%')
-                    ->orWhere('client_name', 'like', '%' . $search . '%');
+                $q->where('ro_number', 'like', '%'.$search.'%')
+                    ->orWhere('vendor_name', 'like', '%'.$search.'%')
+                    ->orWhere('client_name', 'like', '%'.$search.'%');
             });
         }
 
@@ -883,18 +926,18 @@ class RoFormController extends Controller implements HasMiddleware
     {
         $baseQuery = (clone $query)->reorder();
 
-        $stats = $baseQuery->selectRaw("
+        $stats = $baseQuery->selectRaw('
             COUNT(id) as total_ro_count,
             COALESCE(SUM(selling_price), 0) as total_selling_price,
             COALESCE(SUM(buying_price), 0) as total_buying_price,
             COALESCE(SUM(total_amount), 0) as total_amount,
             COALESCE(SUM((selling_price * COALESCE(commission_percent, 0)) / 100), 0) as total_commission
-        ")->first();
+        ')->first();
 
-        $totalSelling = (float)($stats->total_selling_price ?? 0);
-        $totalBuying = (float)($stats->total_buying_price ?? 0);
-        $totalAmount = (float)($stats->total_amount ?? 0);
-        $totalCommission = (float)($stats->total_commission ?? 0);
+        $totalSelling = (float) ($stats->total_selling_price ?? 0);
+        $totalBuying = (float) ($stats->total_buying_price ?? 0);
+        $totalAmount = (float) ($stats->total_amount ?? 0);
+        $totalCommission = (float) ($stats->total_commission ?? 0);
 
         // Profit & Loss calculations
         $grossProfit = $totalSelling - $totalBuying;
@@ -909,7 +952,7 @@ class RoFormController extends Controller implements HasMiddleware
         }
 
         return [
-            'total_ro_count' => (int)($stats->total_ro_count ?? 0),
+            'total_ro_count' => (int) ($stats->total_ro_count ?? 0),
             'total_selling_price' => round($totalSelling, 2),
             'total_buying_price' => round($totalBuying, 2),
             'total_amount' => round($totalAmount, 2),

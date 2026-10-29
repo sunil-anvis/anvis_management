@@ -73,7 +73,8 @@ Route::middleware(['custom_auth'])->group(function () {
     Route::patch('/roForm/{id}/approve', [RoFormController::class, 'approve']);
     Route::patch('/roForm/{id}/reject', [RoFormController::class, 'reject']);
     Route::patch('/roForm/{id}/cancel', [RoFormController::class, 'cancel']);
-    Route::post('/ro-form/{id}/send-to-accounts', [RoFormController::class, 'sendToAccounts']);
+    Route::post('/roForm/{id}/send-to-accounts', [RoFormController::class, 'sendToAccounts']);
+    Route::get('/roForm/{id}/download-pdf', [RoFormController::class, 'downloadPdf']);
 
     // Accounts CRUD & Export
     Route::prefix('accounts')->group(function () {

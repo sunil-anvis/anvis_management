@@ -14,19 +14,26 @@ class UserResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'first_name' => $this->first_name,
-            'last_name' => $this->last_name,
-            'email' => $this->email,
-            'role' => $this->role?->name,
-            'branch_id' => $this->branch_id,
-            'branch' => $this->whenLoaded('branch', function () {
-                return [
-                    'id' => $this->branch->id,
-                    'name' => $this->branch->name,
-                ];
-            }),
+            'id'                  => $this->id,
+            'username'            => $this->username,
+            'first_name'          => $this->first_name,
+            'last_name'           => $this->last_name,
+            'email'               => $this->email,
+            'status'              => $this->status,
+            'role'                => $this->whenLoaded('role', fn() => [
+                'id'   => $this->role->id,
+                'name' => $this->role->name,
+            ]),
+            'branch'              => $this->whenLoaded('branch', fn() => [
+                'id'   => $this->branch->id,
+                'name' => $this->branch->name,
+            ]),
+            'department'          => $this->whenLoaded('department', fn() => [
+                'id'   => $this->department->id,
+                'name' => $this->department->name,
+            ]),
+            'primary_lead_id'     => $this->primary_lead_id,
+            'secondary_lead_id'   => $this->secondary_lead_id,
         ];
     }
 }
