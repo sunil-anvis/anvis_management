@@ -465,7 +465,7 @@
 
                                 <b>
 
-                                    For ANVIS Digital Pvt.Ltd.
+                                    For ANVIS DIGITAL PVT.LTD
 
                                 </b>
 
