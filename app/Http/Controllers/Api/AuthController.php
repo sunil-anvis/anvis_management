@@ -35,7 +35,7 @@ class AuthController extends Controller
                 'first_name' => $validated['first_name'] ?? null,
                 'last_name' => $validated['last_name'] ?? null,
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
+                'password' => bcrypt($validated['password']),
                 'role_id' => $validated['role_id'] ?? null,
                 'branch_id' => $validated['branch_id'] ?? null,
                 'department_id' => $validated['department_id'] ?? null,
@@ -88,21 +88,7 @@ class AuthController extends Controller
                 ->orWhere('username', $loginIdentifier)
                 ->first();
 
-            $passwordValid = false;
-            if ($user) {
-                try {
-                    $passwordValid = Hash::check($validated['password'], $user->password);
-                } catch (\RuntimeException $e) {
-                    // Stored password is not a valid Bcrypt hash (e.g. plain-text, MD5, or legacy)
-                    if ($user->password === $validated['password'] || md5($validated['password']) === $user->password) {
-                        $user->password = Hash::make($validated['password']);
-                        $user->save();
-                        $passwordValid = true;
-                    }
-                }
-            }
-
-            if (!$user || !$passwordValid) {
+            if (!$user || !password_verify($validated['password'], $user->password)) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'The provided credentials are incorrect.',
