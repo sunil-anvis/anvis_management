@@ -22,9 +22,18 @@ class PurchaseInvoice extends Model
 
     public function getInvoiceFileUrlAttribute()
     {
-        if ($this->invoice_file_path) {
-            return asset('public_storage/' . $this->invoice_file_path);
+        $statusLower = strtolower(trim($this->status ?? ''));
+        $isCompleted = in_array($statusLower, ['completed', 'processed', 'approved']);
+
+        if ($isCompleted && $this->invoice_file_path) {
+            $hasFile = file_exists(storage_path('app/public/' . $this->invoice_file_path))
+                    || file_exists(storage_path('app/public_storage/' . $this->invoice_file_path));
+
+            if ($hasFile) {
+                return asset('public_storage/' . $this->invoice_file_path);
+            }
         }
+
         return null;
     }
 }

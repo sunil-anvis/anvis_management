@@ -14,10 +14,6 @@ Route::any('public_storage/{path}', function ($path) {
         $filePath = storage_path("app/public_storage/{$path}");
     }
 
-    if (!file_exists($filePath)) {
-        abort(404);
-    }
-
     $headers = [
         'Access-Control-Allow-Origin' => '*',
         'Access-Control-Allow-Methods' => '*',
@@ -26,6 +22,13 @@ Route::any('public_storage/{path}', function ($path) {
 
     if (request()->isMethod('OPTIONS')) {
         return response('', 200, $headers);
+    }
+
+    if (!file_exists($filePath)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invoice file not found.',
+        ], 404, $headers);
     }
 
     return response()->file($filePath, $headers);
@@ -38,10 +41,6 @@ Route::any('storage/{path}', function ($path) {
         $filePath = storage_path("app/public_storage/{$path}");
     }
 
-    if (!file_exists($filePath)) {
-        abort(404);
-    }
-
     $headers = [
         'Access-Control-Allow-Origin' => '*',
         'Access-Control-Allow-Methods' => '*',
@@ -50,6 +49,13 @@ Route::any('storage/{path}', function ($path) {
 
     if (request()->isMethod('OPTIONS')) {
         return response('', 200, $headers);
+    }
+
+    if (!file_exists($filePath)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invoice file not found.',
+        ], 404, $headers);
     }
 
     return response()->file($filePath, $headers);
