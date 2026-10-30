@@ -23,7 +23,7 @@ class PurchaseInvoice extends Model
     public function getInvoiceFileUrlAttribute()
     {
         if ($this->invoice_file_path) {
-            return asset('public_storage/' . $this->invoice_file_path);
+            return url("/api/purchase-invoices/{$this->id}/file");
         }
 
         return null;

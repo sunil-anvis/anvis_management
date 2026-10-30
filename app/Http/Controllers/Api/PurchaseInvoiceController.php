@@ -16,7 +16,7 @@ class PurchaseInvoiceController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permissions:view-purchase-invoice', only: ['index', 'show']),
+            new Middleware('permissions:view-purchase-invoice', only: ['index', 'show', 'downloadFile']),
             new Middleware('permissions:create-purchase-invoice', only: ['store']),
             new Middleware('permissions:edit-purchase-invoice', only: ['update']),
             new Middleware('permissions:delete-purchase-invoice', only: ['destroy']),
@@ -208,5 +208,34 @@ class PurchaseInvoiceController extends Controller implements HasMiddleware
             'success' => true,
             'message' => 'Purchase invoice deleted successfully'
         ], 200);
+    }
+
+    /**
+     * Download or stream the purchase invoice file.
+     */
+    public function downloadFile(Request $request, $id)
+    {
+        [$user, $role] = $this->getAuthUserAndRole($request);
+        $invoice = PurchaseInvoice::findOrFail($id);
+
+        if (!in_array($role, ['admin', 'superadmin', 'accounts']) && (int)$invoice->user_id !== (int)$user?->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to access this purchase invoice file.'
+            ], 403);
+        }
+
+        if (!$invoice->invoice_file_path || !Storage::disk('public')->exists($invoice->invoice_file_path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invoice file does not exist on the server.'
+            ], 404);
+        }
+
+        return Storage::disk('public')->response($invoice->invoice_file_path, null, [
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => '*',
+            'Access-Control-Allow-Headers' => '*',
+        ]);
     }
 }

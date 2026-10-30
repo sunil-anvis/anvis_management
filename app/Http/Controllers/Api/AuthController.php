@@ -88,7 +88,21 @@ class AuthController extends Controller
                 ->orWhere('username', $loginIdentifier)
                 ->first();
 
-            if (!$user || !Hash::check($validated['password'], $user->password)) {
+            $passwordValid = false;
+            if ($user) {
+                try {
+                    $passwordValid = Hash::check($validated['password'], $user->password);
+                } catch (\RuntimeException $e) {
+                    // Stored password is not a valid Bcrypt hash (e.g. plain-text, MD5, or legacy)
+                    if ($user->password === $validated['password'] || md5($validated['password']) === $user->password) {
+                        $user->password = Hash::make($validated['password']);
+                        $user->save();
+                        $passwordValid = true;
+                    }
+                }
+            }
+
+            if (!$user || !$passwordValid) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'The provided credentials are incorrect.',

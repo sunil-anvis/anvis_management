@@ -94,5 +94,6 @@ Route::middleware(['custom_auth'])->group(function () {
     Route::apiResource('payments', PaymentController::class);
 
     // Purchase Invoices
+    Route::get('/purchase-invoices/{id}/file', [PurchaseInvoiceController::class, 'downloadFile']);
     Route::apiResource('purchase-invoices', PurchaseInvoiceController::class);
 });
