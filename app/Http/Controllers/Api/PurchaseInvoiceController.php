@@ -225,14 +225,60 @@ class PurchaseInvoiceController extends Controller implements HasMiddleware
             ], 403);
         }
 
-        if (!$invoice->invoice_file_path || !Storage::disk('public')->exists($invoice->invoice_file_path)) {
+        if (!$invoice->invoice_file_path) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No file attached to this purchase invoice.'
+            ], 404);
+        }
+
+        $path = $invoice->invoice_file_path;
+
+        // 1. If not found on local public disk, attempt recovery
+        if (!Storage::disk('public')->exists($path)) {
+            // Check sibling directories on same hosting server
+            $candidates = [
+                base_path("../domain/storage/app/public/{$path}"),
+                base_path("../../domain/storage/app/public/{$path}"),
+                base_path("../clients/domain/storage/app/public/{$path}"),
+                base_path("../../clients/domain/storage/app/public/{$path}"),
+                base_path("../../../clients/domain/storage/app/public/{$path}"),
+                storage_path("app/{$path}"),
+                public_path("storage/{$path}"),
+                public_path("public_storage/{$path}"),
+            ];
+
+            $foundCandidate = false;
+            foreach ($candidates as $candidate) {
+                if (file_exists($candidate) && is_file($candidate)) {
+                    Storage::disk('public')->put($path, file_get_contents($candidate));
+                    $foundCandidate = true;
+                    break;
+                }
+            }
+
+            // Fallback: restore from legacy domain server if still missing
+            if (!$foundCandidate) {
+                $legacyUrl = "https://anvisinfotech.com/clients/domain/public_storage/{$path}";
+                try {
+                    $response = \Illuminate\Support\Facades\Http::timeout(10)->get($legacyUrl);
+                    if ($response->successful()) {
+                        Storage::disk('public')->put($path, $response->body());
+                    }
+                } catch (\Throwable $e) {
+                    // Legacy host unreachable
+                }
+            }
+        }
+
+        if (!Storage::disk('public')->exists($path)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invoice file does not exist on the server.'
             ], 404);
         }
 
-        return Storage::disk('public')->response($invoice->invoice_file_path, null, [
+        return Storage::disk('public')->response($path, null, [
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => '*',
             'Access-Control-Allow-Headers' => '*',
