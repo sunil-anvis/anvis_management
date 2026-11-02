@@ -8,6 +8,8 @@ use App\Http\Requests\StoreDomainRequest;
 use App\Http\Requests\UpdateDomainRequest;
 use App\Http\Requests\BulkUpdateDomainRequest;
 use App\Http\Resources\DomainResource;
+use App\Imports\DomainsImport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -214,47 +216,28 @@ class DomainController extends Controller implements HasMiddleware
     }
 
     /**
-     * Bulk update domains.
+     * Bulk update/upsert domains via Excel file or list.
      */
     public function bulkUpdate(BulkUpdateDomainRequest $request): JsonResponse
     {
         [$user, $role] = $this->getAuthUserAndRole($request);
-        $domainIds = $request->domain_ids;
+        $overridePaymentCheck = $request->boolean('override_payment_check', false);
 
-        $query = Domain::whereIn('id', $domainIds);
+        $importer = new DomainsImport($user, $role, $overridePaymentCheck);
 
-        if ($role === 'manager') {
-            $query->where('branch_id', $user->branch_id);
-        } elseif ($role === 'employee') {
-            $query->where('sales_person_id', $user->id);
+        if ($request->hasFile('file')) {
+            $sheets = Excel::toArray($importer, $request->file('file'));
+            $rows = $sheets[0] ?? [];
+        } else {
+            $rows = $request->input('domains', []);
         }
 
-        $domainsToUpdate = $query->get();
-
-        if ($domainsToUpdate->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No eligible domains found for update.'
-            ], 404);
-        }
-
-        $updateData = array_filter([
-            'sales_person_id'  => $request->sales_person_id,
-            'manual_status'    => $request->manual_status,
-            'branch_id'        => in_array($role, ['admin', 'superadmin']) ? $request->branch_id : null,
-            'next_followup_at' => $request->next_followup_at,
-            'remark'           => $request->remark,
-        ], fn($val) => !is_null($val));
-
-        $count = 0;
-        foreach ($domainsToUpdate as $domain) {
-            $domain->update($updateData);
-            $count++;
-        }
+        $result = $importer->processRows($rows);
 
         return response()->json([
             'success' => true,
-            'message' => "Successfully updated {$count} domain(s)."
+            'message' => "Successfully processed {$result['total_rows']} domain(s) ({$result['created_count']} created, {$result['updated_count']} updated).",
+            'data' => $result
         ], 200);
     }
 

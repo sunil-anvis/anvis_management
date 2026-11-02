@@ -13,7 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         // Bypass strict date check for legacy '0000-00-00' values during ALTER TABLE
-        DB::statement("SET SESSION sql_mode = ''");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("SET SESSION sql_mode = ''");
+        }
 
         Schema::table('accounts', function (Blueprint $table) {
             $table->text('comments')->nullable()->after('executive');
@@ -28,7 +30,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("SET SESSION sql_mode = ''");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("SET SESSION sql_mode = ''");
+        }
 
         Schema::table('accounts', function (Blueprint $table) {
             $table->dropColumn('comments');

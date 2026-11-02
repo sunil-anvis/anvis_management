@@ -1937,7 +1937,7 @@
                     }
                 },
                 {
-                    "name": "Bulk Update Domains",
+                    "name": "Bulk Update / Import Domains",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -1951,8 +1951,20 @@
                             }
                         ],
                         "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"domain_ids\": [\n        1,\n        2\n    ],\n    \"manual_status\": \"Follow-up Required\",\n    \"next_followup_at\": \"2026-10-30 11:00:00\",\n    \"remark\": \"Bulk status updated\"\n}"
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "description": "Excel (.xlsx, .xls) or CSV file containing domain columns: name (or domain_name), company_name, booking_date, expiry_date, total_amount, sales_person_id (or email), branch_id, manual_status, next_followup_at, remark"
+                                },
+                                {
+                                    "key": "override_payment_check",
+                                    "value": "false",
+                                    "type": "text",
+                                    "description": "Set true to bypass pending balance check when extending expiry_date"
+                                }
+                            ]
                         },
                         "url": {
                             "raw": "{{base_url}}/domains/bulk-update",

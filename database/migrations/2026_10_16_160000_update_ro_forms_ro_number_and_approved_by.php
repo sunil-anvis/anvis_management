@@ -17,7 +17,7 @@ return new class extends Migration
             $table->index('ro_number');
 
             // 2. Drop foreign key on approved_by so it can store approval count (0, 1, 2)
-            $table->dropForeign('ro_forms_approved_by_foreign');
+            $table->dropForeign(['approved_by']);
         });
 
         Schema::table('ro_forms', function (Blueprint $table) {

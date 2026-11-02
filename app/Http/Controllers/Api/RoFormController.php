@@ -50,6 +50,7 @@ class RoFormController extends Controller implements HasMiddleware
         $query = RoForm::with(
             'department:id,name', 'primaryLead:id,first_name,last_name', 'secondaryLead:id,first_name,last_name',
             'createdBy:id,first_name,last_name', 'updatedBy:id,first_name,last_name',
+            'approvedBy:id,first_name,last_name',
             'rejectedBy:id,first_name,last_name', 'cancelledBy:id,first_name,last_name',
             'account:id,ro_form_id');
 
@@ -180,7 +181,7 @@ class RoFormController extends Controller implements HasMiddleware
             'commission_percent' => $data['commission_percent'] ?? 0,
 
             'status' => 'pending',
-            'approved_by' => 0,
+            'approved_by' => null,
             'approved_leads' => [],
 
             'departments_id' => $user->departments_id,
@@ -201,7 +202,7 @@ class RoFormController extends Controller implements HasMiddleware
     {
         $user = $request->attributes->get('user');
 
-        $roForm = RoForm::with('createdBy', 'updatedBy', 'rejectedBy', 'cancelledBy', 'account')->find($id);
+        $roForm = RoForm::with('createdBy', 'updatedBy', 'approvedBy', 'rejectedBy', 'cancelledBy', 'account')->find($id);
 
         if (! $roForm) {
             return response()->json([
@@ -233,7 +234,7 @@ class RoFormController extends Controller implements HasMiddleware
     {
         $user = $request->attributes->get('user');
 
-        $roForm = RoForm::with('vendor', 'createdBy', 'updatedBy', 'rejectedBy', 'cancelledBy')->find($id);
+        $roForm = RoForm::with('vendor', 'createdBy', 'updatedBy', 'approvedBy', 'rejectedBy', 'cancelledBy')->find($id);
 
         if (! $roForm) {
             return response()->json([
@@ -410,7 +411,7 @@ class RoFormController extends Controller implements HasMiddleware
         }
 
         // Check if already fully approved by both managers (count is 2)
-        if ((int) $roForm->approved_by >= 2) {
+        if (count($roForm->approved_leads ?? []) >= 2) {
             return response()->json([
                 'success' => false,
                 'message' => 'This RO form has already been fully approved by both managers.',
@@ -446,7 +447,7 @@ class RoFormController extends Controller implements HasMiddleware
         // If any one manager approves, status immediately becomes 'approved'
         $roForm->update([
             'status' => 'approved',
-            'approved_by' => $approvedCount,
+            'approved_by' => $user->id,
             'approved_leads' => $approvedLeads,
             'approved_at' => $roForm->approved_at ?? now(),
         ]);
@@ -477,7 +478,8 @@ class RoFormController extends Controller implements HasMiddleware
         return response()->json([
             'success' => true,
             'message' => $approvalMessage,
-            'approved_by' => $approvedCount,
+            'approved_by' => $user->id,
+            'approved_count' => $approvedCount,
             'email_sent' => $emailResult['sent'] ?? false,
             'data' => $roForm,
         ], 200);

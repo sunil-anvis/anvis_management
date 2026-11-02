@@ -471,9 +471,12 @@
 
                                 <br><br><br>
 
-                                <img src="{{ storage_path('public_storage/signatures/sign.png') }}" width="120">
-
-                                <br><br>
+                                @if (strtolower($roForm->status) === 'approved')
+                                    <img src="{{ storage_path('public_storage/signatures/sign.png') }}" width="120">
+                                    <br><br>
+                                @else
+                                    <div style="height: 50px;"></div>
+                                @endif
 
                                 <b>
 
