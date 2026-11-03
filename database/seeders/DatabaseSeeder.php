@@ -18,8 +18,8 @@ class DatabaseSeeder extends Seeder
             BranchSeeder::class,
             DepartmentSeeder::class,
             StatusSeeder::class,
-            // UserSeeder::class,
-            // PaymentStatusSeeder::class,
+            UserSeeder::class,
+            PaymentStatusSeeder::class,
         ]);
     }
 }

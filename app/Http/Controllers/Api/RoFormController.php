@@ -122,22 +122,21 @@ class RoFormController extends Controller implements HasMiddleware
             'service' => 'required|string|max:255',
             'ad_type' => 'required|string|max:255',
             'ad_unit' => 'required|string|max:255',
-            'buy_type' => 'required|string|max:255',
-            'deliverables' => 'required|string',
-            'volume' => 'required|numeric',
-            'bid' => 'required|numeric',
-            // 'total_amount' => 'required|numeric',
+            'buy_type' => 'required|string|max:25',
+            'deliverables' => 'required|string|max:25',
+            'volume' => 'required|numeric|min:0',
+            'bid' => 'required|numeric|min:0',
             'completion_date' => 'required|date',
-            'buying_price' => 'required|numeric',
-            'selling_price' => 'required|numeric',
+            'buying_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
             'commission_percent' => 'nullable|numeric|min:0|max:100',
-
         ]);
 
         if ($valid->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
+                'errors' => $valid->errors(),
                 'error' => $valid->errors(),
             ], 422);
         }
@@ -259,13 +258,6 @@ class RoFormController extends Controller implements HasMiddleware
             ], 422);
         }
 
-        if (in_array($roForm->status, ['approved', 'cancelled'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This Ro form cannot be edited.',
-            ], 422);
-        }
-
         $valid = Validator::make($request->all(), [
             'vendor_id' => 'sometimes|exists:vendors,id',
             'vendor_name' => 'sometimes|string|max:255',
@@ -292,6 +284,7 @@ class RoFormController extends Controller implements HasMiddleware
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
+                'errors' => $valid->errors(),
                 'error' => $valid->errors(),
             ], 422);
         }

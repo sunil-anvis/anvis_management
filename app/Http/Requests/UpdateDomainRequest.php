@@ -22,11 +22,11 @@ class UpdateDomainRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => 'sometimes|required|string|max:255',
             'company_name' => 'sometimes|nullable|string|max:255',
             'booking_date' => 'sometimes|required|date',
-            'expiry_date' => 'sometimes|required|date|after_or_equal:booking_date',
+            'expiry_date' => 'sometimes|required|date',
             'total_amount' => 'sometimes|numeric|min:0',
             'sales_person_id' => 'sometimes|nullable|exists:users,id',
             'manual_status' => 'sometimes|nullable|string|max:255',
@@ -36,6 +36,13 @@ class UpdateDomainRequest extends FormRequest
             'renewed_by' => 'sometimes|nullable|exists:users,id',
             'remark' => 'sometimes|nullable|string',
             'branch_id' => 'sometimes|nullable|exists:branches,id',
+            'override_payment_check' => 'sometimes|boolean',
         ];
+
+        if ($this->has('booking_date')) {
+            $rules['expiry_date'] = 'sometimes|required|date|after_or_equal:booking_date';
+        }
+
+        return $rules;
     }
 }

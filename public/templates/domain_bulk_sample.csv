@@ -1,0 +1,4 @@
+id,name,company_name,booking_date,expiry_date,total_amount,sales_person_id,branch_id,manual_status,next_followup_at,last_contacted_at,renewal_date,remark
+,techsolutions.com,"Tech Solutions Ltd",2026-01-15,2027-01-15,15000,1,1,Active,"2026-11-20 11:00:00","2026-10-25 14:30:00",,"New domain creation example (leave id empty)"
+,globallogistics.in,"Global Logistics Inc",2026-03-01,2027-03-01,8500,admin@example.com,"Main Branch","In Discussion","2026-11-25 10:00:00","2026-10-28 16:00:00",,"Can identify sales person by email and branch by name"
+1,existingdomain.com,"Existing Company Pvt Ltd",2025-05-10,2026-05-10,12000,1,1,"Renewal Follow-up","2026-11-10 12:00:00","2026-10-30 09:30:00",2026-05-01,"Update example: matched by id=1 or by domain name"

@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Exports\AccountsExport;
+use App\Http\Controllers\Controller;
 use App\Models\Accounts;
 use App\Models\RoForm;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-
+use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AccountsController extends Controller implements HasMiddleware
@@ -30,11 +29,10 @@ class AccountsController extends Controller implements HasMiddleware
     {
         $user = $request->attributes->get('user');
 
-
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized'
+                'message' => 'Unauthorized',
             ], 401);
         }
 
@@ -50,7 +48,7 @@ class AccountsController extends Controller implements HasMiddleware
         if ($userDept !== 'accounts') {
             return response()->json([
                 'success' => false,
-                'message' => 'Access Denied: Only Accounts department personnel are authorized.'
+                'message' => 'Access Denied: Only Accounts department personnel are authorized.',
             ], 403);
         }
 
@@ -69,7 +67,7 @@ class AccountsController extends Controller implements HasMiddleware
         return response()->json([
             'success' => true,
             'message' => 'Successfully fetched approved forms',
-            'data' => $accounts
+            'data' => $accounts,
         ], 200);
     }
 
@@ -91,19 +89,31 @@ class AccountsController extends Controller implements HasMiddleware
             'external_amount' => 'required|numeric',
             'executive' => 'required|string|max:200',
             'comments' => 'nullable|string',
-            'comment' => 'nullable|string'
+            'comment' => 'nullable|string',
         ]);
 
         if ($valid->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'error' => $valid->errors()
+                'errors' => $valid->errors(),
+                'error' => $valid->errors(),
             ], 422);
         }
 
         $data = $valid->validated();
-        if (isset($data['comment']) && !isset($data['comments'])) {
+
+        $roForm = RoForm::find($data['ro_form_id']);
+        if (! $roForm || $roForm->status !== 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'The selected RO Form must be approved to create an account record.',
+                'errors' => ['ro_form_id' => ['The selected RO Form is not approved.']],
+                'error' => ['ro_form_id' => ['The selected RO Form is not approved.']],
+            ], 422);
+        }
+
+        if (isset($data['comment']) && ! isset($data['comments'])) {
             $data['comments'] = $data['comment'];
         }
         unset($data['comment']);
@@ -113,7 +123,7 @@ class AccountsController extends Controller implements HasMiddleware
         return response()->json([
             'success' => true,
             'message' => 'Successfully created',
-            'data' => $accounts
+            'data' => $accounts,
         ], 201);
     }
 
@@ -125,17 +135,17 @@ class AccountsController extends Controller implements HasMiddleware
 
         $accounts = Accounts::with('roForm')->find($id);
 
-        if (!$accounts) {
+        if (! $accounts) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data not found'
+                'message' => 'Data not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Successfully fetched',
-            'data' => $accounts
+            'data' => $accounts,
         ], 200);
     }
 
@@ -147,38 +157,52 @@ class AccountsController extends Controller implements HasMiddleware
 
         $accounts = Accounts::find($id);
 
-        if (!$accounts) {
+        if (! $accounts) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data not found'
+                'message' => 'Data not found',
             ], 404);
         }
 
         $valid = Validator::make($request->all(), [
-            'ro_form_id' => 'sometimes|integer|exists:ro_forms,id',
-            'bill_name' => 'sometimes|string|max:200',
-            'anvis_invoice' => 'sometimes|string|max:255',
-            'anvis_invoice_date' => 'sometimes|date',
-            'anvis_status' => 'sometimes|string|max:255',
-            'vendor_invoice' => 'sometimes|string|max:200',
-            'vendor_invoice_date' => 'sometimes|date',
-            'vendor_status' => 'sometimes|string|max:200',
-            'external_amount' => 'sometimes|numeric',
-            'executive' => 'sometimes|string|max:200',
+            'ro_form_id' => 'sometimes|required|integer|exists:ro_forms,id',
+            'bill_name' => 'sometimes|required|string|max:200',
+            'anvis_invoice' => 'sometimes|required|string|max:255',
+            'anvis_invoice_date' => 'sometimes|required|date',
+            'anvis_status' => 'sometimes|required|string|max:255',
+            'vendor_invoice' => 'sometimes|required|string|max:200',
+            'vendor_invoice_date' => 'sometimes|required|date',
+            'vendor_status' => 'sometimes|required|string|max:200',
+            'external_amount' => 'sometimes|required|numeric|min:0',
+            'executive' => 'sometimes|required|string|max:200',
             'comments' => 'nullable|string',
-            'comment' => 'nullable|string'
+            'comment' => 'nullable|string',
         ]);
 
         if ($valid->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'error' => $valid->errors()
+                'errors' => $valid->errors(),
+                'error' => $valid->errors(),
             ], 422);
         }
 
         $data = $valid->validated();
-        if (array_key_exists('comment', $data) && !array_key_exists('comments', $data)) {
+
+        if (isset($data['ro_form_id'])) {
+            $roForm = RoForm::find($data['ro_form_id']);
+            if (! $roForm || $roForm->status !== 'approved') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected RO Form must be approved.',
+                    'errors' => ['ro_form_id' => ['The selected RO Form is not approved.']],
+                    'error' => ['ro_form_id' => ['The selected RO Form is not approved.']],
+                ], 422);
+            }
+        }
+
+        if (array_key_exists('comment', $data) && ! array_key_exists('comments', $data)) {
             $data['comments'] = $data['comment'];
         }
         unset($data['comment']);
@@ -188,7 +212,7 @@ class AccountsController extends Controller implements HasMiddleware
         return response()->json([
             'success' => true,
             'message' => 'Updated successfully',
-            'data' => $accounts
+            'data' => $accounts,
         ], 200);
     }
 
@@ -200,10 +224,10 @@ class AccountsController extends Controller implements HasMiddleware
 
         $accounts = Accounts::find($id);
 
-        if (!$accounts) {
+        if (! $accounts) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data not found'
+                'message' => 'Data not found',
             ], 404);
         }
 
@@ -211,7 +235,7 @@ class AccountsController extends Controller implements HasMiddleware
 
         return response()->json([
             'success' => true,
-            'message' => 'Accounts deleted successfully'
+            'message' => 'Accounts deleted successfully',
         ], 200);
     }
 
@@ -223,14 +247,14 @@ class AccountsController extends Controller implements HasMiddleware
 
         $valid = Validator::make($request->all(), [
             'from_date' => 'nullable|date|date_format:Y-m-d',
-            'to_date'   => 'nullable|date|date_format:Y-m-d|after_or_equal:from_date',
+            'to_date' => 'nullable|date|date_format:Y-m-d|after_or_equal:from_date',
         ]);
 
         if ($valid->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid date filter',
-                'errors'  => $valid->errors(),
+                'errors' => $valid->errors(),
             ], 422);
         }
 
@@ -239,7 +263,7 @@ class AccountsController extends Controller implements HasMiddleware
                 $request->from_date,
                 $request->to_date
             ),
-            'approved_ro' . now()->format('Y_m_d_H_i_s') . '.xlsx'
+            'approved_ro'.now()->format('Y_m_d_H_i_s').'.xlsx'
         );
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class PermissionController extends Controller
@@ -14,10 +15,11 @@ class PermissionController extends Controller
         try {
             return response()->json([
                 'status' => 'success',
-                'data' => Permission::all()
+                'data' => Permission::all(),
             ], 200);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('PermissionController Error: ' . $e->getMessage());
+            Log::error('PermissionController Error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Failed to fetch permissions', 'error' => $e->getMessage()], 500);
         }
     }
@@ -26,7 +28,7 @@ class PermissionController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|string|unique:permissions,name',
+                'name' => 'required|string|max:50|unique:permissions,name',
             ]);
 
             $permission = Permission::create(['name' => $validated['name']]);
@@ -34,12 +36,13 @@ class PermissionController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Permission created successfully',
-                'data' => $permission
+                'data' => $permission,
             ], 201);
         } catch (ValidationException $e) {
             return response()->json(['status' => 'error', 'message' => 'Validation error', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('PermissionController Error: ' . $e->getMessage());
+            Log::error('PermissionController Error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Failed to create permission', 'error' => $e->getMessage()], 500);
         }
     }
@@ -49,10 +52,11 @@ class PermissionController extends Controller
         try {
             return response()->json([
                 'status' => 'success',
-                'data' => $permission
+                'data' => $permission,
             ], 200);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('PermissionController Error: ' . $e->getMessage());
+            Log::error('PermissionController Error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Failed to fetch permission', 'error' => $e->getMessage()], 500);
         }
     }
@@ -61,7 +65,7 @@ class PermissionController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|string|unique:permissions,name,' . $permission->id,
+                'name' => 'sometimes|required|string|max:255|unique:permissions,name,'.$permission->id,
             ]);
 
             $permission->update(['name' => $validated['name']]);
@@ -69,12 +73,13 @@ class PermissionController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Permission updated successfully',
-                'data' => $permission
+                'data' => $permission,
             ], 200);
         } catch (ValidationException $e) {
             return response()->json(['status' => 'error', 'message' => 'Validation error', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('PermissionController Error: ' . $e->getMessage());
+            Log::error('PermissionController Error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Failed to update permission', 'error' => $e->getMessage()], 500);
         }
     }
@@ -83,9 +88,10 @@ class PermissionController extends Controller
     {
         try {
             $permission->delete();
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Permission deleted successfully'
+                'message' => 'Permission deleted successfully',
             ], 200);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Failed to delete permission', 'error' => $e->getMessage()], 500);

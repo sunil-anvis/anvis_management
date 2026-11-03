@@ -206,17 +206,17 @@ class UserController extends Controller implements HasMiddleware
             }
 
             $validated = $request->validate([
-                'username' => 'sometimes|string|max:255|unique:users,username,' . $user->id,
+                'username' => 'sometimes|required|string|max:255|unique:users,username,' . $user->id,
                 'first_name' => 'sometimes|nullable|string|max:255',
                 'last_name' => 'sometimes|nullable|string|max:255',
-                'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
-                'password' => 'sometimes|string|min:8',
+                'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
+                'password' => 'sometimes|required|string|min:8',
                 'role_id' => 'sometimes|nullable|exists:roles,id',
                 'branch_id' => 'sometimes|nullable|exists:branches,id',
                 'department_id' => 'sometimes|nullable|exists:departments,id',
                 'primary_lead_id' => 'sometimes|nullable|exists:users,id',
                 'secondary_lead_id' => 'sometimes|nullable|exists:users,id',
-                'status' => 'sometimes|string|in:active,inactive,suspended',
+                'status' => 'sometimes|required|string|in:active,inactive,suspended',
             ]);
 
             if (!$isAdmin) {

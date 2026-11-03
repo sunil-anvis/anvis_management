@@ -8,6 +8,7 @@ use App\Models\Domain;
 use App\Http\Resources\PaymentResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
@@ -70,12 +71,20 @@ class PaymentController extends Controller implements HasMiddleware
     {
         [$user, $role] = $this->getAuthUserAndRole($request);
 
-        $data = $request->validate([
-            'domain_id' => 'required|exists:domains,id',
-            'amount' => 'required|numeric|min:0.01',
-            'payment_date' => 'required|date',
-            'payment_status_id' => 'required|exists:payment_statuses,id',
-        ]);
+        try {
+            $data = $request->validate([
+                'domain_id' => 'required|exists:domains,id',
+                'amount' => 'required|numeric|min:0.01',
+                'payment_date' => 'required|date',
+                'payment_status_id' => 'required|exists:payment_statuses,id',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         $domain = Domain::findOrFail($data['domain_id']);
 
@@ -131,12 +140,20 @@ class PaymentController extends Controller implements HasMiddleware
             ], 403);
         }
 
-        $data = $request->validate([
-            'domain_id' => 'sometimes|required|exists:domains,id',
-            'amount' => 'sometimes|required|numeric|min:0.01',
-            'payment_date' => 'sometimes|required|date',
-            'payment_status_id' => 'sometimes|required|exists:payment_statuses,id',
-        ]);
+        try {
+            $data = $request->validate([
+                'domain_id' => 'sometimes|required|exists:domains,id',
+                'amount' => 'sometimes|required|numeric|min:0.01',
+                'payment_date' => 'sometimes|required|date',
+                'payment_status_id' => 'sometimes|required|exists:payment_statuses,id',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         if (isset($data['domain_id']) && (int)$data['domain_id'] !== (int)$payment->domain_id) {
             $newDomain = Domain::findOrFail($data['domain_id']);

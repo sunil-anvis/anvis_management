@@ -8,6 +8,7 @@ use App\Http\Resources\PurchaseInvoiceResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
@@ -93,13 +94,21 @@ class PurchaseInvoiceController extends Controller implements HasMiddleware
             ], 403);
         }
 
-        $data = $request->validate([
-            'amount' => 'required|numeric|min:0.01',
-            'payment_date' => 'required|date',
-            'company_name' => 'required|string|max:255',
-            'status' => 'sometimes|string|max:50',
-            'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ]);
+        try {
+            $data = $request->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'payment_date' => 'required|date',
+                'company_name' => 'required|string|max:255',
+                'status' => 'sometimes|string|max:50',
+                'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         $filePath = null;
         if ($request->hasFile('invoice_file')) {
@@ -158,13 +167,21 @@ class PurchaseInvoiceController extends Controller implements HasMiddleware
             ], 403);
         }
 
-        $data = $request->validate([
-            'amount' => 'sometimes|required|numeric|min:0.01',
-            'payment_date' => 'sometimes|required|date',
-            'company_name' => 'sometimes|required|string|max:255',
-            'status' => 'sometimes|string|max:50',
-            'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ]);
+        try {
+            $data = $request->validate([
+                'amount' => 'sometimes|required|numeric|min:0.01',
+                'payment_date' => 'sometimes|required|date',
+                'company_name' => 'sometimes|required|string|max:255',
+                'status' => 'sometimes|string|max:50',
+                'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
         if ($request->hasFile('invoice_file')) {
             if ($invoice->invoice_file_path && Storage::disk('public')->exists($invoice->invoice_file_path)) {

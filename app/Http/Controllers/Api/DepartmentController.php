@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class DepartmentController extends Controller
@@ -14,10 +15,11 @@ class DepartmentController extends Controller
         try {
             return response()->json([
                 'status' => 'success',
-                'data' => Department::withCount('users')->get()
+                'data' => Department::withCount('users')->get(),
             ], 200);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('DepartmentController Error: ' . $e->getMessage());
+            Log::error('DepartmentController Error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Failed to fetch departments', 'error' => $e->getMessage()], 500);
         }
     }
@@ -34,12 +36,13 @@ class DepartmentController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Department created successfully',
-                'data' => $department
+                'data' => $department,
             ], 201);
         } catch (ValidationException $e) {
             return response()->json(['status' => 'error', 'message' => 'Validation error', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('DepartmentController Error: ' . $e->getMessage());
+            Log::error('DepartmentController Error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Failed to create department', 'error' => $e->getMessage()], 500);
         }
     }
@@ -49,10 +52,11 @@ class DepartmentController extends Controller
         try {
             return response()->json([
                 'status' => 'success',
-                'data' => $department->load('users')
+                'data' => $department->load('users'),
             ], 200);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('DepartmentController Error: ' . $e->getMessage());
+            Log::error('DepartmentController Error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Failed to retrieve department', 'error' => $e->getMessage()], 500);
         }
     }
@@ -61,7 +65,7 @@ class DepartmentController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:departments,name,' . $department->id,
+                'name' => 'sometimes|required|string|max:50|unique:departments,name,'.$department->id,
             ]);
 
             $department->update(['name' => $validated['name']]);
@@ -69,12 +73,13 @@ class DepartmentController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Department updated successfully',
-                'data' => $department
+                'data' => $department,
             ], 200);
         } catch (ValidationException $e) {
             return response()->json(['status' => 'error', 'message' => 'Validation error', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('DepartmentController Error: ' . $e->getMessage());
+            Log::error('DepartmentController Error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Failed to update department', 'error' => $e->getMessage()], 500);
         }
     }
@@ -83,12 +88,14 @@ class DepartmentController extends Controller
     {
         try {
             $department->delete();
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Department deleted successfully'
+                'message' => 'Department deleted successfully',
             ], 200);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('DepartmentController Error: ' . $e->getMessage());
+            Log::error('DepartmentController Error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Failed to delete department', 'error' => $e->getMessage()], 500);
         }
     }
