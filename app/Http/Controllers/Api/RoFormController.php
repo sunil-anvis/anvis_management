@@ -45,7 +45,7 @@ class RoFormController extends Controller implements HasMiddleware
 
     public function index(Request $request)
     {
-        $user = $request->attributes->get('user');
+        $user = $request->attributes->get('user') ?? $request->user();
 
         $query = RoForm::with(
             'department:id,name', 'primaryLead:id,first_name,last_name', 'secondaryLead:id,first_name,last_name',
@@ -78,38 +78,39 @@ class RoFormController extends Controller implements HasMiddleware
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
-        $department = strtolower($user->departments?->name ?? '');
+        if ($request->filled('department_id')) {
+            $query->where('departments_id', $request->department_id);
+        } elseif ($request->filled('departments_id')) {
+            $query->where('departments_id', $request->departments_id);
+        }
+
+        if ($request->filled('vendor_id')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
+
+        $roleName = strtolower(str_replace([' ', '_'], '', $user->role?->name ?? $user->roles?->name ?? ''));
+        $department = strtolower($user->department?->name ?? $user->departments?->name ?? '');
+        $isAdmin = in_array($roleName, ['admin', 'superadmin']);
 
         if ($department === 'accounts') {
             // Accounts department can see approved RO forms
             // across all departments.
             $query->where('status', 'approved');
-        } elseif (strtolower($user->roles?->name ?? '') !== 'admin') {
+        } elseif (! $isAdmin) {
             // Other departments can see only their own RO forms.
-            $query->where('departments_id', $user->departments_id);
+            $query->where('departments_id', $user->department_id ?? $user->departments_id);
         }
 
         $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
 
-        $summaryQuery = clone $query;
-
         $perPage = (int) $request->query('limit', $request->query('per_page', 15));
         $roForm = $query->paginate($perPage);
 
-        $roleName = strtolower($user->role?->name ?? $user->roles?->name ?? '');
-        $isPrivileged = in_array($roleName, ['admin', 'superadmin', 'accounts']) || $department === 'accounts';
-
-        $response = [
+        return response()->json([
             'success' => true,
             'message' => 'Successfully fetched',
             'data' => $roForm,
-        ];
-
-        if ($isPrivileged) {
-            $response['revenue_summary'] = $this->calculateRevenueSummary($summaryQuery);
-        }
-
-        return response()->json($response, 200);
+        ], 200);
     }
 
     public function store(Request $request)
@@ -210,11 +211,12 @@ class RoFormController extends Controller implements HasMiddleware
             ], 404);
         }
 
-        $role = strtolower($user->roles?->name ?? '');
+        $role = strtolower(str_replace([' ', '_'], '', $user->role?->name ?? $user->roles?->name ?? ''));
+        $isAdmin = in_array($role, ['admin', 'superadmin']);
 
-        if ($role !== 'admin') {
-
-            if ($roForm->departments_id != $user->departments_id) {
+        if (! $isAdmin) {
+            $userDeptId = $user->department_id ?? $user->departments_id;
+            if ($roForm->departments_id != $userDeptId) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not authorized to view this RO Form.',
@@ -242,9 +244,10 @@ class RoFormController extends Controller implements HasMiddleware
             ], 404);
         }
 
-        $role = strtolower($user->roles?->name ?? '');
+        $role = strtolower(str_replace([' ', '_'], '', $user->role?->name ?? $user->roles?->name ?? ''));
+        $isAdmin = in_array($role, ['admin', 'superadmin']);
 
-        if ($role !== 'admin' && $roForm->departments_id != $user->departments_id) {
+        if (! $isAdmin && $roForm->departments_id != ($user->department_id ?? $user->departments_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'You are not authorized to edit this RO Form.',
@@ -348,10 +351,11 @@ class RoFormController extends Controller implements HasMiddleware
             ], 422);
         }
 
-        $role = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $role = strtolower(str_replace([' ', '_'], '', $user->role?->name ?? $user->roles?->name ?? ''));
+        $isAdmin = in_array($role, ['admin', 'superadmin']);
 
-        if ($role !== 'admin' && $role !== 'superadmin') {
-            if ($roForm->departments_id != $user->departments_id) {
+        if (! $isAdmin) {
+            if ($roForm->departments_id != ($user->department_id ?? $user->departments_id)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not authorized to delete this RO Form.',
@@ -505,11 +509,11 @@ class RoFormController extends Controller implements HasMiddleware
 
         $reason = $valid->validated();
 
-        $role = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $role = strtolower(str_replace([' ', '_'], '', $user->role?->name ?? $user->roles?->name ?? ''));
+        $isAdmin = in_array($role, ['admin', 'superadmin']);
 
         if (
-            $role !== 'admin' &&
-            $role !== 'superadmin' &&
+            ! $isAdmin &&
             $user->id != $roForm->primary_lead_id &&
             $user->id != $roForm->secondary_lead_id
         ) {
@@ -567,11 +571,11 @@ class RoFormController extends Controller implements HasMiddleware
 
         $reason = $valid->validated();
 
-        $role = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $role = strtolower(str_replace([' ', '_'], '', $user->role?->name ?? $user->roles?->name ?? ''));
+        $isAdmin = in_array($role, ['admin', 'superadmin']);
 
         if (
-            $role !== 'admin' &&
-            $role !== 'superadmin' &&
+            ! $isAdmin &&
             $user->id != $roForm->primary_lead_id &&
             $user->id != $roForm->secondary_lead_id
         ) {
@@ -692,11 +696,11 @@ class RoFormController extends Controller implements HasMiddleware
             ], 404);
         }
 
-        $user = $request->attributes->get('user');
-        $role = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $user = $request->attributes->get('user') ?? $request->user();
+        $role = strtolower(str_replace([' ', '_'], '', $user->role?->name ?? $user->roles?->name ?? ''));
         $isAdmin = in_array($role, ['admin', 'superadmin']);
 
-        if (! $isAdmin && $roForm->departments_id != $user->departments_id) {
+        if (! $isAdmin && $roForm->departments_id != ($user->department_id ?? $user->departments_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'You are not authorized to download this RO Form.',
@@ -732,12 +736,12 @@ class RoFormController extends Controller implements HasMiddleware
             ], 404);
         }
 
-        $role = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $role = strtolower(str_replace([' ', '_'], '', $user->role?->name ?? $user->roles?->name ?? ''));
+        $isAdmin = in_array($role, ['admin', 'superadmin']);
 
         // Only assigned managers or Admin can send
         if (
-            $role !== 'admin' &&
-            $role !== 'superadmin' &&
+            ! $isAdmin &&
             $user->id != $roForm->primary_lead_id &&
             $user->id != $roForm->secondary_lead_id
         ) {
@@ -851,7 +855,7 @@ class RoFormController extends Controller implements HasMiddleware
             ], 401);
         }
 
-        $roleName = strtolower($user->role?->name ?? $user->roles?->name ?? '');
+        $roleName = strtolower(str_replace([' ', '_'], '', $user->role?->name ?? $user->roles?->name ?? ''));
         $department = strtolower($user->department?->name ?? $user->departments?->name ?? '');
 
         $isPrivileged = in_array($roleName, ['admin', 'superadmin', 'accounts']) || $department === 'accounts';
